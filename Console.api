@@ -1,0 +1,88 @@
+_Console_AddAlias($sSource, $sTarget, $sExeName [, $hDll ] ) Defines a console alias for the specified executable.
+_Console_Alloc( [ $hDll ] ) Allocates a new console for the calling process.
+_Console_Attach( [$iProcessID [, $hDll ]] ) Attaches the calling process to the console of the specified process.
+_Console_CreateScreenBuffer( [ $iDesiredAccess [, $iShareMode [, $hDll ]]] ) Creates a console screen buffer.
+_Console_FillOutputAttribute($hConsoleOutput, $iAttribute, $nLength, $iX, $iY [, $hDll ] ) Sets the character attributes for a specified number of character cells, beginning at the specified coordinates in a screen buffer.
+_Console_FillOutputCharacter($hConsoleOutput, $sCharacter, $nLength [, $iX [, $iY [, $fUnicode [, $hDll ]]]] ) Writes a character to the console screen buffer a specified number of times.
+_Console_FlushInputBuffer( [$hConsoleInput [, $hDll ]] ) Flushes the console input buffer.
+_Console_Free( [ $hDll ] ) Detaches the calling process from its console.
+_Console_GenerateCtrlEvent($iCtrlEvent [, $iProcessGroupId [, $hDll ]] ) Sends a specified signal to a console process group that shares the console associated with the calling process.
+_Console_GetAlias($sSource [, $sExeName [, $fUnicode [, $hDll ]]] ) Retrieves the specified alias for the specified executable.
+_Console_GetAliases( [$sExeName [, $fUnicode [, $hDll ]]] ) Retrieves all defined console aliases for the specified executable.
+_Console_GetAliasesLength( [$sExeName [, $fUnicode [, $hDll ]]] ) Returns the size, in bytes, of the buffer needed to store all of the console aliases for the specified executable.
+_Console_GetAliasExes( [ $fUnicode [, $hDll ]] ) Retrieves the names of all executables with console aliases defined.
+_Console_GetAliasExesLength( [ $fUnicode [, $hDll ]] ) Returns the size, in bytes, of the buffer needed to store the names of all executables that have console aliases defined.
+_Console_GetCP( [ $hDll ] ) Retrieves the input code page used by the console associated with the calling process.
+_Console_GetCursorInfo( [$hConsoleOutput [, $hDll ]] ) Retrieves information about the size and visibility of the cursor for the specified console screen buffer.
+_Console_GetCursorPosition( [ $hConsole [, $hDll ]] ) Gets the current cursor position in a console.
+_Console_GetCursorSize( [ $hConsole [, $hDll ]] ) Retrieves whether the size of the cursor for the specified console screen buffer.
+_Console_GetCursorVisible( [ $hConsole [, $hDll ]] ) Retrieves whether the cursor is visible for the specified console screen buffer.
+_Console_GetCurrentFont( [$hConsoleOutput [, $fMaximumWindow [, $hDll ]]] ) Retrieves information about the current console font.
+_Console_GetCurrentFontEx( [$hConsoleOutput [, $fMaximumWindow [, $hDll ]]] ) Retrieves extended information about the current console font.
+_Console_GetCurrentFontFace( [ $hConsoleOutput [, $fMaximumWindow [, $hDll ]]] ) Retrieves the face name of the current console font.
+_Console_GetCurrentFontFamily( [ $hConsoleOutput [, $fMaximumWindow [, $hDll ]]] ) Retrieves the font family of the current console font.
+_Console_GetCurrentFontIndex( [ $hConsoleOutput [, $fMaximumWindow [, $hDll ]]] ) Retrieves the system index of the current console font.
+_Console_GetCurrentFontSize( [ $hConsoleOutput [, $fMaximumWindow [, $hDll ]]] ) Retrieves the size of the current console font.
+_Console_GetCurrentFontWeight( [ $hConsoleOutput [, $fMaximumWindow [, $hDll ]]] ) Retrieves the weight of the current console font.
+_Console_GetDisplayMode( [ $hDll ] ) Retrieves the display mode of the current console.
+_Console_GetFontSize( [$hConsoleOutput [, $hDll ]] ) Retrieves the size of the font used by the specified console screen buffer.
+_Console_GetHistoryBufferSize( [ $hDll ] ) Gets the number of events stored in a history buffer for the current console.
+_Console_GetHistoryDuplicates( [ $hDll ] ) Gets whether duplicate entries will be stored in the history buffer.
+_Console_GetHistoryInfo( [ $hDll ] ) Retrieves the history settings for the calling process's console.
+_Console_GetHistoryNumberOfBuffers( [ $hDll ] ) Gets the number of history buffers kept for this console process.
+_Console_GetLargestWindowSize( [$hConsoleOutput [, $hDll ]] ) Retrieves the size of the largest possible console window.
+_Console_GetMode( [$hConsoleHandle [, $hDll ]] ) Retrieves the current input mode of a console's input buffer or the current output mode of a console screen buffer.
+_Console_GetNumberOfInputEvents( [$hConsoleInput [, $hDll ]] ) Retrieves the number of unread input records in the console's input buffer.
+_Console_GetNumberOfMouseButtons( [ $hDll ] ) Retrieves the number of buttons on the mouse used by the current console.
+_Console_GetOriginalTitle( [ $fUnicode [, $hDll ]] ) Retrieves the original title for the current console window.
+_Console_GetOutputCP( [ $hDll ] ) Retrieves the output code page used by the console associated with the calling process.
+_Console_GetProcessList( [ $hDll ] ) Retrieves a list of the processes attached to the current console.
+_Console_GetScreenBufferAttributes( [ $hConsoleOutput [, $hDll ]] ) Retrieves the attributes of the specified console screen buffer.
+_Console_GetScreenBufferFullscreen( [ $hConsoleOutput [, $hDll ]] ) Retrieves the specified console screen buffer's color settings.
+_Console_GetScreenBufferFullscreen( [ $hConsoleOutput [, $hDll ]] ) Retrieves whether fullscreen mode is allowed for the specified console screen buffer.
+_Console_GetScreenBufferInfo( [ $hConsoleOutput [, $hDll ]] ) Retrieves information about the specified console screen buffer.
+_Console_GetScreenBufferInfoEx( [ $hConsoleOutput [, $hDll ]] ) Retrieves extended information about the specified console screen buffer.
+_Console_GetScreenBufferMaxSize( [ $hConsoleOutput [, $hDll ]] ) Retrieves the maximum size of the specified console screen buffer.
+_Console_GetScreenBufferPopupAttributes( [ $hConsoleOutput [, $hDll ]] ) Retrieves the fill attribute for console pop-ups for the specified console screen buffer.
+_Console_GetScreenBufferPos( [ $hConsoleOutput [, $hDll ]] ) Retrieves the position of the specified console screen buffer.
+_Console_GetScreenBufferSize( [ $hConsoleOutput [, $hDll ]] ) Retrieves the size of the specified console screen buffer.
+_Console_GetSelectionAnchor( [ $hDll ] ) Retrieves the anchor point the current console selection.
+_Console_GetSelectionFlags( [ $hDll ] ) Retrieves the flags for the current selection.
+_Console_GetSelectionInfo( [ $hDll ] ) Retrieves information about the current console selection.
+_Console_GetSelectionRect( [ $hDll ] ) Retrieves the current console selection rectangle.
+_Console_GetSelectionRectEx( [ $hDll ] ) Retrieves the current console selection rectangle as a SMALL_RECT structure.
+_Console_GetStdHandle( [ $nStdHandle [, $hDll ]] ) Retrieves a handle for the standard input, standard output, or standard error device.
+_Console_GetTitle( [ $fUnicode [, $hDll ]] ) Retrieves the title for the current console window.
+_Console_GetWindow( [ $hDll ] ) Retrieves the window handle used by the console associated with the calling process.
+_Console_Pause( [ $sMessage [, $hDll ]] ) Pause the execution of the script until the user presses a key.
+_Console_Read( [ $fUnicode [, $hDll ]] ) Reads data from the current console input buffer and removes it from the buffer.
+_Console_ReadConsole($hConsoleInput, $nNumberOfCharsToRead [, $fUnicode [, $hDll ]] ) Reads data from a console input buffer and removes it from the buffer.
+_Console_ReadOutputCharacter($hConsoleOutput, $nNumberOfCharsToRead, $iX, $iY [, $fUnicode [, $hDll ]] ) Copies a number of characters from consecutive cells of a console screen buffer, beginning at a specified location.
+_Console_ScrollScreenBuffer($hConsoleOutput, Moves a block of data in a screen buffer.
+_Console_ScrollScreenBufferEx($hConsoleOutput, $pScrollRect, $iOriginX, $iOriginY, $pFill Moves a block of data in a screen buffer. The effects of the move can be limited by specifying a clipping rectangle, so the contents of the console screen buffer outside the clipping rectangle are unchanged.
+_Console_SetActiveScreenBuffer($hConsoleOutput [, $hDll ] ) Sets the specified screen buffer to be the currently displayed console screen buffer.
+_Console_SetCP($iCodePageID [, $hDll ] ) Sets the input code page used by the console associated with the calling process. A console uses its input code page to translate keyboard input into the corresponding character value.
+_Console_SetCtrlHandler($pHandlerRoutine [, $fAdd [, $hDll ]] ) Adds or removes an application-defined HandlerRoutine function from the list of handler functions for the calling process.
+_Console_SetCursorInfo($hConsoleOutput, $iSize, $fVisible [, $hDll ] ) Sets the size and visibility of the cursor for the specified console screen buffer.
+_Console_SetCursorSize($hConsoleOutput, $iSize [, $hDll ] ) Sets the size of the cursor for the specified console screen buffer.
+_Console_SetCursorVisible($hConsoleOutput, $fVisible [, $hDll ] ) Sets the visibility of the cursor for the specified console screen buffer.
+_Console_SetCursorPosition($hConsoleOutput, $iX, $iY [, $hDll ] ) Sets the cursor position in the specified console screen buffer.
+_Console_SetCurrentFontEx($hConsoleOutput, $fMaximumWindow, $iFont, $iWidth, $iHeight, $iFontFamily, _ Sets extended information about the current console font.
+_Console_SetDisplayMode($hConsoleOutput, $iFlags, $iWidth, $iHeight [, $hDll ] ) Sets the display mode of the specified console screen buffer.
+_Console_SetHistoryInfo($iHistoryBufferSize, $iNumberOfBuffers, $fStoreDuplicates [, $hDll ] ) Sets the history settings for the calling process's console.
+_Console_SetIconEx($hConsole, $sFile [, $iInd [, $hDll ]] ) Sets the icon of the console from a file.
+_Console_SetIconEx($hConsole, $hIcon [, $hDll ] ) Sets the icon of the console from a HICON.
+_Console_SetMode($hConsoleHandle, $iMode [, $hDll ] ) Sets the input mode of a console's input buffer or the output mode of a console screen buffer.
+_Console_SetOutputCP($iCodePageID [, $hDll ] ) Sets the output code page used by the console associated with the calling process. A console uses its output code page to translate the character values written by the various output functions into the images displayed in the console window.
+_Console_SetScreenBufferInfoEx($hConsoleOutput, $iSizeX, $iSizeY, $iCursorPositionX, _ Sets the foreground (text) and background color attributes of characters written to the console screen buffer.
+_Console_SetScreenBufferInfoExEx($hConsoleOutput, $pConsoleScreenBufferInfoEx [, $hDll = -1 ] ) Sets the foreground (text) and background color attributes of characters written to the console screen buffer.
+_Console_SetScreenBufferSize($hConsoleOutput, $iWidth, $iHeight [, $hDll ] ) Changes the size of the specified console screen buffer.
+_Console_SetStdHandle($nStdHandle, $hHandle [, $hDll ] ) Sets the handle for the specified standard device (standard input, standard output, or standard error).
+_Console_SetTextAttribute($hConsoleOutput, $iAttributes [, $hDll ] ) Sets the attributes of characters written to the console screen buffer by the _WinApi_WriteFile or _Console_WriteConsole function, or echoed by the _WinApi_ReadFile or _Console_Read function. This function affects text written after the function call.
+_Console_SetTitle($sConsoleTitle [, $fUnicode [, $hDll ]] ) Sets the title for the current console window.
+_Console_SetWindowInfo($hConsoleOutput, $iLeft, $iTop, $iRight, $iBottom [, $fAbsolute [, $hDll ]] ) Sets the current size and position of a console screen buffer's window.
+_Console_SetWindowPos($hConsoleOutput, $iX, $iY, $iWidth, $iHeight [, $hDll ] ) Sets the current size and position of a console screen buffer's window.
+_Console_Write($sText [, $fUnicode [, $hDll ]] ) Writes a character string to the *current* console screen buffer beginning at the current cursor location.
+_Console_WriteConsole($hConsole, $sText [, $fUnicode [, $hDll ]] ) Writes a character string to a console screen buffer beginning at the current cursor location.
+_Console_WriteOutputAttribute( $hConsole , $aiAttributes , $iX , $iY [, $iStart [, $hDll ]] ) Copies a number of character attributes to consecutive cells of a console screen buffer, beginning at a specified location.
+_Console_WriteOutputCharacter( $hConsole , $sText , $iX , $iY [, $fUnicode [, $hDll ]] ) Copies a number of characters to consecutive cells of a console screen buffer, beginning at a specified location.
