@@ -161,3 +161,11 @@ pip-log.txt
 
 # Mac crap
 .DS_Store
+
+
+#############
+## AutoIt (Tidy files)
+#############
+
+[Bb]ackup/
+*_tidy.txt
