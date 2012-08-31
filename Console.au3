@@ -1,18 +1,18 @@
 
 #AutoIt3Wrapper_Au3Check_Parameters=-d -w 1 -w 2 -w 3 -w 4 -w 5 -w 6
-#Tidy_Parameters=/gd /gds /sf
+#Tidy_Parameters=/sf
 
-#include<WinAPI.au3>
+#include <WinAPI.au3>
 
 ; #INDEX# =======================================================================================================================
 ; Title .........: Console.au3
-; Version .......: 0.0.0.27
+; Version .......: 0.0.0.28
 ; AutoIt Version : 3.3.0.0+
 ; Minimum OS ....: Windows 2000
 ; Language ......: English
 ; Description ...: The following functions are used to access a console.
-; Author(s) .....: Matt Diesel (Mat)
-; Forum link ....: http://www.autoitscript.com/forum/index.php?showtopic=??????
+; Author(s) .....: Matt Diesel (Mat), Erik Pilsits (wraithdu)
+; Forum link ....: http://www.autoitscript.com/forum/index.php?showtopic=?????? (tba)
 ; MSDN link .....: http://msdn.microsoft.com/en-us/library/ms682073.aspx
 ; DLL(s) ........: Kernel32.dll
 ; ===============================================================================================================================
@@ -50,6 +50,7 @@
 ; _Console_GetHistoryDuplicates
 ; _Console_GetHistoryInfo
 ; _Console_GetHistoryNumberOfBuffers
+; _Console_GetInput
 ; _Console_GetLargestWindowSize
 ; _Console_GetMode
 ; _Console_GetNumberOfInputEvents
@@ -78,6 +79,7 @@
 ; _Console_Read
 ; _Console_ReadConsole
 ; _Console_ReadOutputCharacter
+; _Console_Run
 ; _Console_ScrollScreenBuffer
 ; _Console_ScrollScreenBufferEx
 ; _Console_SetActiveScreenBuffer
@@ -104,6 +106,7 @@
 ; _Console_SetWindowPos
 ; _Console_Write
 ; _Console_WriteConsole
+; _Console_WriteLine
 ; _Console_WriteOutputAttribute
 ; _Console_WriteOutputCharacter
 ; ===============================================================================================================================
@@ -131,6 +134,9 @@ Global $__gvKernel32 = "kernel32.dll"
 
 ; Use this variable to set a global default for unicode / ANSI (Unicode = true)
 Global $__gfUnicode = True
+
+; Determines if running under SciTE or compiled as a CUI app, then uses ConsoleWrite in _Console_WriteConsole function
+Global $__gfIsCUI = (_WinAPI_GetStdHandle(1) <> 0)
 
 ; ===============================================================================================================================
 
@@ -573,7 +579,7 @@ EndFunc   ;==>_Console_AddAlias
 ; Remarks .......: This function is primarily used by graphical user interface (GUI) application to create a console window. Note
 ;                  that AutoIt's internal ConsoleWrite function will not write to this console, you must use the
 ;                  _Console_WriteConsole function instead.
-; Related .......: _Console_Attach, _Console_CreateProcess, _Console_Free, _Console_GetStdHandle,
+; Related .......: _Console_Attach, _Console_Free, _Console_GetStdHandle, _Console_Run,
 ;                  _Console_WriteConsole
 ; Link ..........: http://msdn.microsoft.com/en-us/library/ms681944.aspx
 ; Example .......: Yes
@@ -1625,6 +1631,100 @@ Func _Console_GetHistoryNumberOfBuffers($hDll = -1)
 	Return DllStructGetData($tConsoleHistoryInfo, "NumberOfHistoryBuffers")
 EndFunc   ;==>_Console_GetHistoryNumberOfBuffers
 
+; #FUNCTION# ====================================================================================================
+; Name...........: _Console_GetInput
+; Description....: Get user input from the console
+; Syntax.........: _Console_GetInput([$sPrompt = ""[, $iLen = 0[, $autoReturn = False[, $validateEach = ""[, $validateFinal = ""[, $hideInput = False[, $maskChar = ""]]]]]]])
+; Parameters.....: $sPrompt             - [Optional] Prompt text to display before input
+;                  $iLen                - [Optional] Maximum length of input
+;                  $autoReturn          - [Optional] Automatically return when $iLen is reached
+;                  $validateEach        - [Optional] Regular expression to validate each character as it is input
+;                  $validateFinal       - [Optional] Regular expression to validate the final input
+;                  $hideInput           - [Optional] Do no print input characters
+;                  $maskChar            - [Optional] If $hideInput is true, the character to print instead of input
+;                  $fUnicode            - If 'True' then the unicode version will be used. If 'False' then ANSI is used.
+;                  $hDll                - A handle to a dll to use. This prevents constant opening of the dll which could slow it
+;                                         down. If you are calling lots of functions from the same dll then this recommended.
+;
+; Return values..: Success - Input string
+;                  Failure - Empty string
+; Author.........: Erik Pilsits
+; Modified.......:
+; Remarks........:
+; Related........:
+; Link...........:
+; Example........:
+; ===============================================================================================================
+Func _Console_GetInput($sPrompt = "", $iLen = 0, $autoReturn = False, $validateEach = "", $validateFinal = "", $hideInput = False, $maskChar = "", $fUnicode = Default, $hDll = -1)
+	$iLen = Abs($iLen)
+	$maskChar = StringLeft($maskChar, 1)
+	If $sPrompt <> "" Then _Console_Write($sPrompt, $fUnicode, $hDll)
+	Local $sChars = "", $sIn, $aErase[3] = [ChrW(8), " ", ChrW(8)]
+	While True
+		$sIn = DllCall("msvcrt.dll", "int:cdecl", "_getwch")
+		If $sIn[0] < 32 Then
+			; control characters
+			Switch $sIn[0]
+				Case 13 ; ENTER
+					; validate if no length or length not reached
+					; otherwise validation was performed upon input
+					If ($validateFinal <> "") And ((Not $iLen) Or (StringLen($sChars) < $iLen)) Then
+						If Not StringRegExp($sChars, $validateFinal, 0) Then
+							; failed validation
+							; erase entire input
+							If Not $hideInput Or ($hideInput And ($maskChar <> "")) Then
+								For $i = 0 To 2
+									For $j = 1 To StringLen($sChars)
+										_Console_Write($aErase[$i], $fUnicode, $hDll)
+									Next
+								Next
+							EndIf
+							$sChars = ""
+							ContinueLoop
+						EndIf
+					EndIf
+					; no validation or passed validation
+					ExitLoop
+				Case 8 ; BACKSPACE
+					If $sChars <> "" Then
+						If Not $hideInput Or ($hideInput And ($maskChar <> "")) Then _Console_Write(ChrW(8) & " " & ChrW(8), $fUnicode, $hDll)
+						$sChars = StringTrimRight($sChars, 1)
+					EndIf
+				Case 27 ; ESCAPE
+					Return ""
+			EndSwitch
+		Else
+			; printable characters
+			; length reached, do nothing
+			If $iLen And (StringLen($sChars) >= $iLen) Then ContinueLoop
+			; get character
+			$sIn = ChrW($sIn[0])
+			; validate each character?
+			If ($validateEach <> "") And (Not StringRegExp($sIn, $validateEach, 0)) Then ContinueLoop
+			$sChars &= $sIn
+			; always validate when length reached
+			If ($validateFinal <> "") And $iLen And (StringLen($sChars) >= $iLen) Then
+				If Not StringRegExp($sChars, $validateFinal, 0) Then
+					; failed validation
+					; erase last char input, do not print
+					$sChars = StringTrimRight($sChars, 1)
+					ContinueLoop
+				EndIf
+			EndIf
+			; no validation or passed validation or no length or length not reached
+			; print character?
+			If Not $hideInput Then
+				_Console_Write($sIn, $fUnicode, $hDll)
+			ElseIf $hideInput And ($maskChar <> "") Then
+				_Console_Write($maskChar, $fUnicode, $hDll)
+			EndIf
+			; autoReturn?
+			If $autoReturn And $iLen And (StringLen($sChars) >= $iLen) Then ExitLoop
+		EndIf
+	WEnd
+	Return $sChars
+EndFunc   ;==>_Console_GetInput
+
 ; #FUNCTION# ====================================================================================================================
 ; Name...........: _Console_GetLargestWindowSize
 ; Description ...: Retrieves the size of the largest possible console window.
@@ -1962,9 +2062,9 @@ Func _Console_GetScreenBufferAttributes($hConsoleOutput = -1, $hDll = -1)
 EndFunc   ;==>_Console_GetScreenBufferAttributes
 
 ; #FUNCTION# ====================================================================================================================
-; Name...........: _Console_GetScreenBufferFullscreen
+; Name...........: _Console_GetScreenBufferColorTable
 ; Description ...: Retrieves the specified console screen buffer's color settings.
-; Syntax.........: _Console_GetScreenBufferFullscreen( [ $hConsoleOutput [, $hDll ]] )
+; Syntax.........: _Console_GetScreenBufferColorTable( [ $hConsoleOutput [, $hDll ]] )
 ; Parameters ....: $hConsoleOutput      - A handle to the console screen buffer. The handle must have the GENERIC_READ access
 ;                                         right.
 ;                  $hDll                - A handle to a dll to use. This prevents constant opening of the dll which could slow it
@@ -2470,29 +2570,58 @@ Func _Console_GetWindow($hDll = -1)
 EndFunc   ;==>_Console_GetWindow
 
 ; #FUNCTION# ====================================================================================================================
-; Name...........: _Console_Pause
-; Description ...: Pause the execution of the script until the user presses a key.
-; Syntax.........: _Console_Pause( [ $sMessage [, $hDll ]] )
-; Parameters ....: $sMessage            - The message to be printed before pausing execution. If the Default keyword then the
-;                                         default message ("Press any key to continue. . ." is printed.
+; Name ..........: _Console_Pause
+; Description ...: Pause the execution of the script until the user presses a key or timeout.
+; Syntax ........: _Console_Pause( [ $sMsg = Default [, $iTime = -1 [, $fUnicode = Default [, $hDll = -1 ]]]] )
+; Parameters ....: $sMsg                - Message to display, 'Press any key to continue . . . ' if Default
+;                  $iTime               - Pause timeout in milliseconds, -1 for INFINITE.
+;                  $fUnicode            - If 'True' then the unicode version will be used. If 'False' then ANSI is used.
 ;                  $hDll                - A handle to a dll to use. This prevents constant opening of the dll which could slow it
 ;                                         down. If you are calling lots of functions from the same dll then this recommended.
-;                                         This will only be used if $sMessage is used.
-; Return values .: None
-; Author ........: Matt Diesel (Mat)
-; Modified.......:
-; Remarks .......: This currently uses the cmd PAUSE command. This might change when I work out how to do it properly.
+; Return values .: Success              - Character pressed or empty string in case of timeout
+;                  Failure              - Empty string and sets @error
+;                                       | 1 - WaitForSingleObject failed
+;                  @extended            - 1 if wait timed out, otherwise 0
+; Author ........: Erik Pilsits
+; Modified ......:
+; Remarks .......: Returns once something has been typed into console.
 ; Related .......:
 ; Link ..........:
-; Example .......: Yes
+; Example .......: No
 ; ===============================================================================================================================
-Func _Console_Pause($sMessage = Default, $hDll = -1)
-	If $sMessage = Default Then
-		RunWait(@ComSpec & " /c PAUSE", @ScriptDir, Default, 0x10)
+Func _Console_Pause($sMsg = Default, $iTime = -1, $fUnicode = Default, $hDll = -1)
+	Local $hConsoleInput, $iRet, $modeOrig, $charOut
+
+	If $fUnicode = Default Then $fUnicode = $__gfUnicode
+	If $hDll = -1 Then $hDll = $__gvKernel32
+
+	If $sMsg = Default Then
+		_Console_Write("Press any key to continue . . . ", $fUnicode, $hDll)
 	Else
-		_Console_Write($sMessage, $hDll)
-		RunWait(@ComSpec & " /c PAUSE >nul", @ScriptDir, Default, 0x10)
+		_Console_Write($sMsg, $fUnicode, $hDll)
 	EndIf
+
+	$hConsoleInput = _Console_GetStdHandle($STD_INPUT_HANDLE, $hDll)
+
+	; wait for input
+	_Console_FlushInputBuffer($hConsoleInput, $hDll)
+
+	$iRet = _WinAPI_WaitForSingleObject($hConsoleInput, $iTime)
+	If @error Or ($iRet = -1) Then Return SetError(1, 0, "")
+	If $iRet = 0x00000102 Then Return SetExtended(1, "")
+
+	; read input
+	; get console mode
+	$modeOrig = _Console_GetMode($hConsoleInput, $hDll)
+
+	; remove LINE_INPUT
+	_Console_SetMode($hConsoleInput, BitAND($modeOrig, BitNOT($ENABLE_LINE_INPUT)), $hDll)
+	$charOut = _Console_ReadConsole($hConsoleInput, 1, $fUnicode, $hDll)
+
+	; restore mode
+	_Console_SetMode($hConsoleInput, $modeOrig, $hDll)
+
+	Return $charOut
 EndFunc   ;==>_Console_Pause
 
 ; #FUNCTION# ====================================================================================================================
@@ -2516,11 +2645,22 @@ Func _Console_Read($fUnicode = Default, $hDll = -1)
 
 	If $fUnicode = Default Then $fUnicode = $__gfUnicode
 
+	; make sure LINE_INPUT is ON
+	Local $modeOrig = _Console_GetMode($hConsoleInput, $hDll)
+	_Console_SetMode($hConsoleInput, BitOR($modeOrig, $ENABLE_LINE_INPUT), $hDll)
+
 	While 1
 		$sTemp = _Console_ReadConsole($hConsoleInput, 1, $fUnicode, $hDll)
-		If $sTemp = @CR Then ExitLoop
+		If $sTemp = @CR Then
+			; read the leftover @LF
+			_Console_ReadConsole($hConsoleInput, 1, $fUnicode, $hDll)
+			ExitLoop
+		EndIf
 		$sRet &= $sTemp
 	WEnd
+
+	; restore console mode
+	_Console_SetMode($hConsoleInput, $modeOrig, $hDll)
 
 	Return $sRet
 EndFunc   ;==>_Console_Read
@@ -2552,7 +2692,7 @@ Func _Console_ReadConsole($hConsoleInput, $nNumberOfCharsToRead, $fUnicode = Def
 	If $hDll = -1 Then $hDll = $__gvKernel32
 
 	If $fUnicode Then
-		$tBuffer = DllStructCreate("wchar[" & ($nNumberOfCharsToRead + 1) & "]")
+		$tBuffer = DllStructCreate("wchar[" & $nNumberOfCharsToRead & "]")
 
 		$aResult = DllCall($hDll, "bool", "ReadConsoleW", _
 				"handle", $hConsoleInput, _
@@ -2570,6 +2710,7 @@ Func _Console_ReadConsole($hConsoleInput, $nNumberOfCharsToRead, $fUnicode = Def
 				"dword*", 0, _
 				"ptr", 0)
 	EndIf
+
 	If @error Or (Not $aResult[0]) Then Return SetError(@error, @extended, "")
 
 	Return SetExtended($aResult[4], DllStructGetData($tBuffer, 1))
@@ -2631,6 +2772,34 @@ Func _Console_ReadOutputCharacter($hConsoleOutput, $nNumberOfCharsToRead, $iX, $
 
 	Return SetExtended($aResult[4], DllStructGetData($tBuffer, 1))
 EndFunc   ;==>_Console_ReadOutputCharacter
+
+; #FUNCTION# ====================================================================================================
+; Name...........: _Console_Run
+; Description....: Run a command in the console window
+; Syntax.........: _Console_Run($sCmd[, $fWait = True[, $fNew = False[, $iShow = Default]]])
+; Parameters.....: $sCmd     - Command to run
+;                  $fWait     - [Optional] Wait for command to finish
+;                  $fNew     - [Optional] Run in new console window
+;                  $iShow    - [Optional] Show flag (default for Run(Wait) is @SW_HIDE)
+;
+; Return values..: Success - See Run(Wait) functions
+;                  Failure - See Run(Wait) functions
+; Author.........: Erik Pilsits
+; Modified.......:
+; Remarks........:
+; Related........:
+; Link...........:
+; Example........:
+; ===============================================================================================================
+Func _Console_Run($sCmd, $fWait = True, $fNew = False, $iShow = Default)
+	Local $iFlag = 0x10
+	If $fNew Then $iFlag = 0x10000
+	If $fWait Then
+		Return RunWait($sCmd, "", $iShow, $iFlag)
+	Else
+		Return Run($sCmd, "", $iShow, $iFlag)
+	EndIf
+EndFunc   ;==>_Console_Run
 
 ; #FUNCTION# ====================================================================================================================
 ; Name ..........: _Console_ScrollScreenBuffer
@@ -3157,7 +3326,7 @@ EndFunc   ;==>_Console_SetHistoryInfo
 ; #FUNCTION# ====================================================================================================================
 ; Name...........: _Console_SetIcon
 ; Description ...: Sets the icon of the console from a file.
-; Syntax.........: _Console_SetIconEx($hConsole, $sFile [, $iInd [, $hDll ]] )
+; Syntax.........: _Console_SetIcon($hConsole, $sFile [, $iInd [, $hDll ]] )
 ; Parameters ....: $hConsole            - A handle to a console screen buffer.
 ;                  $sFile               - A path to a file that contains icons. This can be dll or exe or an icon file.
 ;                  $iInd                - The index of the icon to retieve. Default is 0.
@@ -3737,7 +3906,7 @@ EndFunc   ;==>_Console_Write
 ; Return values .: Success              - True, the number of characters written is returned in @extended.
 ;                  Failure              - False
 ; Author ........: Matt Diesel (Mat)
-; Modified.......:
+; Modified.......: Erik Pilsits (wraithdu) - Added code to handle writing to the SciTE output pane.
 ; Remarks .......:
 ; Related .......: _Console_Read
 ; Link ..........: http://msdn.microsoft.com/en-us/library/ms687401.aspx
@@ -3746,29 +3915,58 @@ EndFunc   ;==>_Console_Write
 Func _Console_WriteConsole($hConsole, $sText, $fUnicode = Default, $hDll = -1)
 	Local $aResult
 
-	If $fUnicode = Default Then $fUnicode = $__gfUnicode
-	If $hDll = -1 Then $hDll = $__gvKernel32
-	If $hConsole = -1 Then $hConsole = _Console_GetStdHandle($STD_OUTPUT_HANDLE, $hDll)
+	If $__gfIsCUI Then
+		$aResult = ConsoleWrite($sText)
 
-	If $fUnicode Then
-		$aResult = DllCall($hDll, "bool", "WriteConsoleW", _
-				"handle", $hConsole, _
-				"wstr", $sText, _
-				"dword", StringLen($sText), _
-				"dword*", 0, _
-				"ptr", 0)
+		Return SetExtended($aResult, $aResult <> 0)
 	Else
-		$aResult = DllCall($hDll, "bool", "WriteConsoleA", _
-				"handle", $hConsole, _
-				"str", $sText, _
-				"dword", StringLen($sText), _
-				"dword*", 0, _
-				"ptr", 0)
-	EndIf
-	If @error Then Return SetError(@error, @extended, False)
+		If $fUnicode = Default Then $fUnicode = $__gfUnicode
+		If $hDll = -1 Then $hDll = $__gvKernel32
+		If $hConsole = -1 Then $hConsole = _Console_GetStdHandle($STD_OUTPUT_HANDLE, $hDll)
 
-	Return SetExtended($aResult[4], $aResult[0] <> 0)
+		If $fUnicode Then
+			$aResult = DllCall($hDll, "bool", "WriteConsoleW", _
+					"handle", $hConsole, _
+					"wstr", $sText, _
+					"dword", StringLen($sText), _
+					"dword*", 0, _
+					"ptr", 0)
+		Else
+			$aResult = DllCall($hDll, "bool", "WriteConsoleA", _
+					"handle", $hConsole, _
+					"str", $sText, _
+					"dword", StringLen($sText), _
+					"dword*", 0, _
+					"ptr", 0)
+		EndIf
+		If @error Then Return SetError(@error, @extended, False)
+
+		Return SetExtended($aResult[4], $aResult[0] <> 0)
+	EndIf
 EndFunc   ;==>_Console_WriteConsole
+
+; #FUNCTION# ====================================================================================================================
+; Name...........: _Console_WriteLine
+; Description ...: Writes a character string to the *current* console screen buffer beginning at the current cursor location
+;                  and appends a new line
+; Syntax.........: _Console_WriteLine($sText [, $fUnicode [, $hDll ]] )
+; Parameters ....: $sText               - Text to be written to the console screen buffer.
+;                  $fUnicode            - If 'True' then the unicode version will be used. If 'False' then ANSI is used.
+;                  $hDll                - A handle to a dll to use. This prevents constant opening of the dll which could slow it
+;                                         down. If you are calling lots of functions from the same dll then this recommended.
+; Return values .: Success              - True, the number of characters written is returned in @extended.
+;                  Failure              - False
+; Author ........: Matt Diesel (Mat)
+; Modified.......:
+; Remarks .......: This is just a wrapper for the _Console_WriteConsole function. It is the same as calling _Console_WriteConsole
+;                  with a first parameter ($hConsole) = -1.
+; Related .......: _Console_Read, _Console_WriteConsole, _Console_WriteConsoleOutputCharacter
+; Link ..........: http://msdn.microsoft.com/en-us/library/ms687401.aspx
+; Example .......: Yes
+; ===============================================================================================================================
+Func _Console_WriteLine($sText, $fUnicode = Default, $hDll = -1)
+	Return _Console_WriteConsole(-1, $sText & @CRLF, $fUnicode, $hDll)
+EndFunc   ;==>_Console_WriteLine
 
 ; #FUNCTION# ====================================================================================================================
 ; Name ..........: _Console_WriteOutputAttribute
