@@ -485,7 +485,8 @@ Global Const $tagCONSOLE_SCREEN_BUFFER_INFO = "SHORT SizeX; SHORT SizeY; SHORT C
 ; ===============================================================================================================================
 Global Const $tagCONSOLE_SCREEN_BUFFER_INFOEX = "ULONG Size; SHORT SizeX; SHORT SizeY;SHORT CursorPositionX;" & _
 		"SHORT CursorPositionY; SHORT Attributes; SHORT Left; SHORT Top; SHORT Right; SHORT Bottom;" & _
-		"SHORT MaximumWindowSizeX; SHORT MaximumWindowSizeY; WORD PopupAttributes; BOOL FullscreenSupported; DWORD ColorTable[16];"
+		"SHORT MaximumWindowSizeX; SHORT MaximumWindowSizeY; WORD PopupAttributes; BOOL FullscreenSupported;" & _
+		"DWORD ColorTable[16];"
 
 ; #STRUCTURE# ===================================================================================================================
 ; Name...........: $tagCONSOLE_SELECTION_INFO
@@ -507,6 +508,46 @@ Global Const $tagCONSOLE_SCREEN_BUFFER_INFOEX = "ULONG Size; SHORT SizeX; SHORT 
 ; ===============================================================================================================================
 Global Const $tagCONSOLE_SELECTION_INFO = "DWORD Flags; SHORT X; SHORT Y; SHORT Left; SHORT Top; SHORT Right; SHORT Bottom;"
 
+
+#region WIP
+
+; Notes:
+;   Event record structures are up to 16 bytes on both 32 and 64 bit machines (winapi types have definite sizes).
+
+Global Const $tagKEY_EVENT_RECORD_W = "BOOL KeyDown; WORD RepeatCount; WORD VirtualKeyCode; WORD VirtualScanCode;" & _
+		"WCHAR Char; DWORD ControlKeyState;"
+
+Global Const $tagKEY_EVENT_RECORD_A = "BOOL KeyDown; WORD RepeatCount; WORD VirtualKeyCode; WORD VirtualScanCode;" & _
+		"CHAR Char; CHAR; DWORD ControlKeyState;"
+
+Global Const $tagKEY_EVENT_RECORD = $tagKEY_EVENT_RECORD_W
+
+
+Global Const $tagMOUSE_EVENT_RECORD = "SHORT MousePositionX; SHORT MousePositionY; DWORD ButtonState; DWORD ControlKeyState;" & _
+		"DWORD EventFlags;"
+
+
+Global Const $tagWINDOW_BUFFER_SIZE_RECORD = "SHORT SizeX; SHORT SizeY;"
+
+Global Const $tagMENU_EVENT_RECORD = "UINT CommandId;"
+
+Global Const $tagFOCUS_EVENT_RECORD = "BOOL SetFocus;"
+
+
+; 18 bytes
+Global Const $tagINPUT_RECORD = "WORD EventType; BYTE[16];"
+
+Global Const $tagINPUT_RECORD_KEY = "WORD EventType; STRUCT; " & $tagKEY_EVENT_RECORD & "ENDSTRUCT;"
+Global Const $tagINPUT_RECORD_KEY_A = "WORD EventType; STRUCT; " & $tagKEY_EVENT_RECORD_A & "ENDSTRUCT;"
+Global Const $tagINPUT_RECORD_KEY_W = "WORD EventType; STRUCT; " & $tagKEY_EVENT_RECORD_W & "ENDSTRUCT;"
+Global Const $tagINPUT_RECORD_MOUSE = "WORD EventType; STRUCT; " & $tagMOUSE_EVENT_RECORD & "ENDSTRUCT;"
+Global Const $tagINPUT_RECORD_SIZE = "WORD EventType; STRUCT; " & $tagWINDOW_BUFFER_SIZE_RECORD & "BYTE[12]; ENDSTRUCT;"
+Global Const $tagINPUT_RECORD_MENU = "WORD EventType; STRUCT; " & $tagMENU_EVENT_RECORD & "BYTE[12]; ENDSTRUCT;"
+Global Const $tagINPUT_RECORD_FOCUS = "WORD EventType; STRUCT; " & $tagFOCUS_EVENT_RECORD & "BYTE[12]; ENDSTRUCT;"
+
+#endregion WIP
+
+
 ; #STRUCTURE# ===================================================================================================================
 ; Name...........: $tagSMALL_RECT
 ; Description ...: Defines the coordinates of the upper left and lower right corners of a rectangle.
@@ -519,6 +560,7 @@ Global Const $tagCONSOLE_SELECTION_INFO = "DWORD Flags; SHORT X; SHORT Y; SHORT 
 ;                  coordinates specify the rows and columns of screen-buffer character cells.
 ; ===============================================================================================================================
 Global Const $tagSMALL_RECT = "SHORT Left; SHORT Top; SHORT Right; SHORT Bottom;"
+
 
 ; #FUNCTION# ====================================================================================================================
 ; Name...........: _Console_AddAlias
@@ -2694,7 +2736,7 @@ Func _Console_ReadConsole($hConsoleInput, $nNumberOfCharsToRead, $fUnicode = Def
 	If $fUnicode Then
 		$tBuffer = DllStructCreate("wchar[" & $nNumberOfCharsToRead & "]")
 
-		$aResult = DllCall($hDll, "bool", "ReadConsoleW", _
+		$aResult = DllCall($hDll, "BOOL", "ReadConsoleW", _
 				"handle", $hConsoleInput, _
 				"ptr", DllStructGetPtr($tBuffer), _
 				"dword", $nNumberOfCharsToRead, _
@@ -2703,7 +2745,7 @@ Func _Console_ReadConsole($hConsoleInput, $nNumberOfCharsToRead, $fUnicode = Def
 	Else
 		$tBuffer = DllStructCreate("char[" & ($nNumberOfCharsToRead + 1) & "]")
 
-		$aResult = DllCall($hDll, "bool", "ReadConsoleA", _
+		$aResult = DllCall($hDll, "BOOL", "ReadConsoleA", _
 				"handle", $hConsoleInput, _
 				"ptr", DllStructGetPtr($tBuffer), _
 				"dword", $nNumberOfCharsToRead, _
@@ -2715,6 +2757,53 @@ Func _Console_ReadConsole($hConsoleInput, $nNumberOfCharsToRead, $fUnicode = Def
 
 	Return SetExtended($aResult[4], DllStructGetData($tBuffer, 1))
 EndFunc   ;==>_Console_ReadConsole
+
+
+
+#region WIP
+
+Func _Console_ReadInputRecord($hConsoleInput = -1, $fUnicode = Default, $hDll = -1)
+	Local $tInputRecord, $iResult
+
+	If $hDll = -1 Then $hDll = $__gvKernel32
+	If $hConsoleInput = -1 Then $hConsoleInput = _Console_GetStdHandle($STD_INPUT_HANDLE, $hDll)
+	If $fUnicode = Default Then $fUnicode = $__gfUnicode
+
+	$tInputRecord = DllStructCreate($tagINPUT_RECORD)
+
+	$iResult = _Console_REadInput($hConsoleInput, DllStructGetPtr($tInputRecord), 1, $fUnicode, $hDll)
+	If $iResult = 0 Then Return SetError(@error, @extended, 0)
+
+	Return $tInputRecord
+EndFunc   ;==>_Console_ReadInputRecord
+
+; Returns No. events read, zero = fail
+Func _Console_ReadInput($hConsoleInput, $pBuffer, $iLength, $fUnicode = Default, $hDll = -1)
+	Local $aResult
+
+	If $fUnicode = Default Then $fUnicode = $__gfUnicode
+	If $hDll = -1 Then $hDll = $__gvKernel32
+	If $hConsoleInput = -1 Then $hConsoleInput = _Console_GetStdHandle($STD_INPUT_HANDLE, $hDll)
+
+	If $fUnicode Then
+		$aResult = DllCall($hDll, "BOOL", "ReadConsoleInputW", _
+				"handle", $hConsoleInput, _
+				"ptr", $pBuffer, _
+				"int", $iLength, _
+				"int*", 0)
+	Else
+		$aResult = DllCall($hDll, "BOOL", "ReadConsoleInputA", _
+				"handle", $hConsoleInput, _
+				"ptr", $pBuffer, _
+				"int", $iLength, _
+				"int*", 0)
+	EndIf
+
+	If @error Or (Not $aResult[0]) Then Return SetError(@error, @extended, 0)
+
+	Return $aResult[4]
+EndFunc   ;==>_Console_ReadInput
+#endregion WIP
 
 ; #FUNCTION# ====================================================================================================================
 ; Name ..........: _Console_ReadOutputCharacter
@@ -4091,6 +4180,4 @@ Func _Console_WriteOutputCharacter($hConsole, $sText, $iX, $iY, $fUnicode = Defa
 				"dword*", 0)
 	EndIf
 	If @error Then Return SetError(@error, @extended, False)
-
-	Return SetExtended($aResult[4], $aResult[0] <> 0)
 EndFunc   ;==>_Console_WriteOutputCharacter
