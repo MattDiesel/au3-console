@@ -562,6 +562,9 @@ Global Const $tagINPUT_RECORD_FOCUS = "WORD EventType; STRUCT; " & $tagFOCUS_EVE
 Global Const $tagSMALL_RECT = "SHORT Left; SHORT Top; SHORT Right; SHORT Bottom;"
 
 
+
+
+
 ; #FUNCTION# ====================================================================================================================
 ; Name...........: _Console_AddAlias
 ; Description ...: Defines a console alias for the specified executable.
@@ -2757,9 +2760,6 @@ Func _Console_ReadConsole($hConsoleInput, $nNumberOfCharsToRead, $fUnicode = Def
 
 	Return SetExtended($aResult[4], DllStructGetData($tBuffer, 1))
 EndFunc   ;==>_Console_ReadConsole
-
-
-
 #region WIP
 
 Func _Console_ReadInputRecord($hConsoleInput = -1, $fUnicode = Default, $hDll = -1)
@@ -4090,7 +4090,7 @@ EndFunc   ;==>_Console_WriteLine
 ;                                         down. If you are calling lots of functions from the same dll then this recommended.
 ; Return values .: Success              - True
 ;                  Failure              - False and sets the @error flag.
-; Author(s) .....: Matt Diesel (Mat)
+; Author(s) .....: Erik Pilsits (wraithdu)
 ; Modified ......:
 ; Remarks .......: If the number of attributes to be written to extends beyond the end of the specified row in the console screen
 ;                  buffer, attributes are written to the next row. If the number of attributes to be written to extends beyond
@@ -4103,11 +4103,10 @@ EndFunc   ;==>_Console_WriteLine
 Func _Console_WriteOutputAttribute($hConsole, $aiAttributes, $iX, $iY, $iStart = 0, $iEnd = -1, $hDll = -1)
 	Local $tCOORD, $iBnd, $tAttributes, $aResult
 
-	$iBnd = UBound($aiAttributes, 1) - 1
 	If Not IsArray($aiAttributes) Then Return SetError(1, 0, False)
 	If UBound($aiAttributes, 0) <> 1 Then Return SetError(1, 0, False)
-	If $iEnd > $iBnd Then Return SetError(1, 0, False)
-	If $iEnd < $iStart Then $iEnd = $iBnd
+	$iBnd = UBound($aiAttributes) - 1
+	If $iEnd > $iBnd Or $iEnd < $iStart Then $iEnd = $iBnd
 
 	If $hDll = -1 Then $hDll = $__gvKernel32
 	If $hConsole = -1 Then $hConsole = _Console_GetStdHandle($STD_OUTPUT_HANDLE, $hDll)
@@ -4116,18 +4115,18 @@ Func _Console_WriteOutputAttribute($hConsole, $aiAttributes, $iX, $iY, $iStart =
 
 	$tAttributes = DllStructCreate("word[" & ($iEnd - $iStart + 1) & "]")
 	For $i = $iStart To $iEnd
-		DllStructSetData($tAttributes, 1, $iStart + $i + 1)
+		DllStructSetData($tAttributes, 1, $aiAttributes[$i], $i - $iStart + 1)
 	Next
 
 	$aResult = DllCall($hDll, "bool", "WriteConsoleOutputAttribute", _
 			"handle", $hConsole, _
-			"ptr", DllStructGetPtr($tAttributes), _
-			"dword", $iBnd, _
+			"struct*", $tAttributes, _
+			"dword", $iEnd - $iStart + 1, _
 			"dword", $tCOORD, _
 			"dword*", 0)
 	If @error Then Return SetError(@error, @extended, False)
 
-	Return SetExtended($aResult[4], $aResult[0] <> 0)
+	Return SetExtended($aResult[5], $aResult[0] <> 0)
 EndFunc   ;==>_Console_WriteOutputAttribute
 
 ; #FUNCTION# ====================================================================================================================
