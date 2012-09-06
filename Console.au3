@@ -485,7 +485,8 @@ Global Const $tagCONSOLE_SCREEN_BUFFER_INFO = "SHORT SizeX; SHORT SizeY; SHORT C
 ; ===============================================================================================================================
 Global Const $tagCONSOLE_SCREEN_BUFFER_INFOEX = "ULONG Size; SHORT SizeX; SHORT SizeY;SHORT CursorPositionX;" & _
 		"SHORT CursorPositionY; SHORT Attributes; SHORT Left; SHORT Top; SHORT Right; SHORT Bottom;" & _
-		"SHORT MaximumWindowSizeX; SHORT MaximumWindowSizeY; WORD PopupAttributes; BOOL FullscreenSupported; DWORD ColorTable[16];"
+		"SHORT MaximumWindowSizeX; SHORT MaximumWindowSizeY; WORD PopupAttributes; BOOL FullscreenSupported;" & _
+		"DWORD ColorTable[16];"
 
 ; #STRUCTURE# ===================================================================================================================
 ; Name...........: $tagCONSOLE_SELECTION_INFO
@@ -507,6 +508,46 @@ Global Const $tagCONSOLE_SCREEN_BUFFER_INFOEX = "ULONG Size; SHORT SizeX; SHORT 
 ; ===============================================================================================================================
 Global Const $tagCONSOLE_SELECTION_INFO = "DWORD Flags; SHORT X; SHORT Y; SHORT Left; SHORT Top; SHORT Right; SHORT Bottom;"
 
+
+#region WIP
+
+; Notes:
+;   Event record structures are up to 16 bytes on both 32 and 64 bit machines (winapi types have definite sizes).
+
+Global Const $tagKEY_EVENT_RECORD_W = "BOOL KeyDown; WORD RepeatCount; WORD VirtualKeyCode; WORD VirtualScanCode;" & _
+		"WCHAR Char; DWORD ControlKeyState;"
+
+Global Const $tagKEY_EVENT_RECORD_A = "BOOL KeyDown; WORD RepeatCount; WORD VirtualKeyCode; WORD VirtualScanCode;" & _
+		"CHAR Char; CHAR; DWORD ControlKeyState;"
+
+Global Const $tagKEY_EVENT_RECORD = $tagKEY_EVENT_RECORD_W
+
+
+Global Const $tagMOUSE_EVENT_RECORD = "SHORT MousePositionX; SHORT MousePositionY; DWORD ButtonState; DWORD ControlKeyState;" & _
+		"DWORD EventFlags;"
+
+
+Global Const $tagWINDOW_BUFFER_SIZE_RECORD = "SHORT SizeX; SHORT SizeY;"
+
+Global Const $tagMENU_EVENT_RECORD = "UINT CommandId;"
+
+Global Const $tagFOCUS_EVENT_RECORD = "BOOL SetFocus;"
+
+
+; 18 bytes
+Global Const $tagINPUT_RECORD = "WORD EventType; BYTE[16];"
+
+Global Const $tagINPUT_RECORD_KEY = "WORD EventType; STRUCT; " & $tagKEY_EVENT_RECORD & "ENDSTRUCT;"
+Global Const $tagINPUT_RECORD_KEY_A = "WORD EventType; STRUCT; " & $tagKEY_EVENT_RECORD_A & "ENDSTRUCT;"
+Global Const $tagINPUT_RECORD_KEY_W = "WORD EventType; STRUCT; " & $tagKEY_EVENT_RECORD_W & "ENDSTRUCT;"
+Global Const $tagINPUT_RECORD_MOUSE = "WORD EventType; STRUCT; " & $tagMOUSE_EVENT_RECORD & "ENDSTRUCT;"
+Global Const $tagINPUT_RECORD_SIZE = "WORD EventType; STRUCT; " & $tagWINDOW_BUFFER_SIZE_RECORD & "BYTE[12]; ENDSTRUCT;"
+Global Const $tagINPUT_RECORD_MENU = "WORD EventType; STRUCT; " & $tagMENU_EVENT_RECORD & "BYTE[12]; ENDSTRUCT;"
+Global Const $tagINPUT_RECORD_FOCUS = "WORD EventType; STRUCT; " & $tagFOCUS_EVENT_RECORD & "BYTE[12]; ENDSTRUCT;"
+
+#endregion WIP
+
+
 ; #STRUCTURE# ===================================================================================================================
 ; Name...........: $tagSMALL_RECT
 ; Description ...: Defines the coordinates of the upper left and lower right corners of a rectangle.
@@ -519,6 +560,10 @@ Global Const $tagCONSOLE_SELECTION_INFO = "DWORD Flags; SHORT X; SHORT Y; SHORT 
 ;                  coordinates specify the rows and columns of screen-buffer character cells.
 ; ===============================================================================================================================
 Global Const $tagSMALL_RECT = "SHORT Left; SHORT Top; SHORT Right; SHORT Bottom;"
+
+
+
+
 
 ; #FUNCTION# ====================================================================================================================
 ; Name...........: _Console_AddAlias
@@ -714,12 +759,12 @@ Func _Console_FillOutputAttribute($hConsoleOutput, $iAttribute, $nLength, $iX, $
 
 	$tCOORD = BitShift($iY, -16) + $iX
 
-	$aResult = DllCall($hDll, "bool", "FillConsoleOutputAttribute", _
-			"handle", $hConsoleOutput, _
-			"word", $iAttribute, _
-			"dword", $nLength, _
-			"int", $tCOORD, _
-			"dword*", 0)
+	$aResult = DllCall($hDll, "BOOL", "FillConsoleOutputAttribute", _
+			"HANDLE", $hConsoleOutput, _
+			"WORD", $iAttribute, _
+			"DWORD", $nLength, _
+			"INT", $tCOORD, _
+			"DWORD*", 0)
 	If @error Then Return SetError(@error, @extended, False)
 
 	Return SetExtended($aResult[5], $aResult[0] <> 0)
@@ -1634,7 +1679,7 @@ EndFunc   ;==>_Console_GetHistoryNumberOfBuffers
 ; #FUNCTION# ====================================================================================================
 ; Name...........: _Console_GetInput
 ; Description....: Get user input from the console
-; Syntax.........: _Console_GetInput([$sPrompt = ""[, $iLen = 0[, $autoReturn = False[, $validateEach = ""[, $validateFinal = ""[, $hideInput = False[, $maskChar = ""]]]]]]])
+; Syntax.........: _Console_GetInput( [$sPrompt [, $iLen [, $autoReturn [, $validateEach [, $validateFinal [, $hideInput [, $maskChar ]]]]]]] )
 ; Parameters.....: $sPrompt             - [Optional] Prompt text to display before input
 ;                  $iLen                - [Optional] Maximum length of input
 ;                  $autoReturn          - [Optional] Automatically return when $iLen is reached
@@ -1648,7 +1693,7 @@ EndFunc   ;==>_Console_GetHistoryNumberOfBuffers
 ;
 ; Return values..: Success - Input string
 ;                  Failure - Empty string
-; Author.........: Erik Pilsits
+; Author.........: Erik Pilsits (Wraithdu)
 ; Modified.......:
 ; Remarks........:
 ; Related........:
@@ -1659,12 +1704,15 @@ Func _Console_GetInput($sPrompt = "", $iLen = 0, $autoReturn = False, $validateE
 	$iLen = Abs($iLen)
 	$maskChar = StringLeft($maskChar, 1)
 	If $sPrompt <> "" Then _Console_Write($sPrompt, $fUnicode, $hDll)
-	Local $sChars = "", $sIn, $aErase[3] = [ChrW(8), " ", ChrW(8)]
+	Local $sChars = "", $sIn, $aPos
+	; get starting cursor position
+	Local $aPosStart = _Console_GetCursorPosition(-1, $hDll)
+	Local $aSize = _Console_GetScreenBufferSize(-1, $hDll)
 	While True
-		$sIn = DllCall("msvcrt.dll", "int:cdecl", "_getwch")
-		If $sIn[0] < 32 Then
+		$sIn = AscW(_Console_Read(False, $fUnicode, $hDll))
+		If $sIn < 32 Then
 			; control characters
-			Switch $sIn[0]
+			Switch $sIn
 				Case 13 ; ENTER
 					; validate if no length or length not reached
 					; otherwise validation was performed upon input
@@ -1673,11 +1721,9 @@ Func _Console_GetInput($sPrompt = "", $iLen = 0, $autoReturn = False, $validateE
 							; failed validation
 							; erase entire input
 							If Not $hideInput Or ($hideInput And ($maskChar <> "")) Then
-								For $i = 0 To 2
-									For $j = 1 To StringLen($sChars)
-										_Console_Write($aErase[$i], $fUnicode, $hDll)
-									Next
-								Next
+								; use starting position
+								_Console_FillOutputCharacter(-1, " ", StringLen($sChars), $aPosStart[0], $aPosStart[1], $fUnicode, $hDll)
+								_Console_SetCursorPosition(-1, $aPosStart[0], $aPosStart[1])
 							EndIf
 							$sChars = ""
 							ContinueLoop
@@ -1687,7 +1733,17 @@ Func _Console_GetInput($sPrompt = "", $iLen = 0, $autoReturn = False, $validateE
 					ExitLoop
 				Case 8 ; BACKSPACE
 					If $sChars <> "" Then
-						If Not $hideInput Or ($hideInput And ($maskChar <> "")) Then _Console_Write(ChrW(8) & " " & ChrW(8), $fUnicode, $hDll)
+						If Not $hideInput Or ($hideInput And ($maskChar <> "")) Then
+							; use current position
+							$aPos = _Console_GetCursorPosition(-1, $hDll)
+							If $aPos[0] = 0 Then
+								; beginning of line of wrapped text
+								$aPos[0] = $aSize[0]
+								$aPos[1] -= 1
+							EndIf
+							_Console_WriteOutputCharacter(-1, " ", $aPos[0] - 1, $aPos[1], $fUnicode, $hDll)
+							_Console_SetCursorPosition(-1, $aPos[0] - 1, $aPos[1], $hDll)
+						EndIf
 						$sChars = StringTrimRight($sChars, 1)
 					EndIf
 				Case 27 ; ESCAPE
@@ -1698,7 +1754,7 @@ Func _Console_GetInput($sPrompt = "", $iLen = 0, $autoReturn = False, $validateE
 			; length reached, do nothing
 			If $iLen And (StringLen($sChars) >= $iLen) Then ContinueLoop
 			; get character
-			$sIn = ChrW($sIn[0])
+			$sIn = ChrW($sIn)
 			; validate each character?
 			If ($validateEach <> "") And (Not StringRegExp($sIn, $validateEach, 0)) Then ContinueLoop
 			$sChars &= $sIn
@@ -2582,7 +2638,7 @@ EndFunc   ;==>_Console_GetWindow
 ;                  Failure              - Empty string and sets @error
 ;                                       | 1 - WaitForSingleObject failed
 ;                  @extended            - 1 if wait timed out, otherwise 0
-; Author ........: Erik Pilsits
+; Author ........: Erik Pilsits (Wraithdu)
 ; Modified ......:
 ; Remarks .......: Returns once something has been typed into console.
 ; Related .......:
@@ -2590,10 +2646,7 @@ EndFunc   ;==>_Console_GetWindow
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_Pause($sMsg = Default, $iTime = -1, $fUnicode = Default, $hDll = -1)
-	Local $hConsoleInput, $iRet, $modeOrig, $charOut
-
 	If $fUnicode = Default Then $fUnicode = $__gfUnicode
-	If $hDll = -1 Then $hDll = $__gvKernel32
 
 	If $sMsg = Default Then
 		_Console_Write("Press any key to continue . . . ", $fUnicode, $hDll)
@@ -2601,23 +2654,22 @@ Func _Console_Pause($sMsg = Default, $iTime = -1, $fUnicode = Default, $hDll = -
 		_Console_Write($sMsg, $fUnicode, $hDll)
 	EndIf
 
-	$hConsoleInput = _Console_GetStdHandle($STD_INPUT_HANDLE, $hDll)
+	Local $hConsoleInput = _Console_GetStdHandle($STD_INPUT_HANDLE, $hDll)
 
 	; wait for input
 	_Console_FlushInputBuffer($hConsoleInput, $hDll)
-
-	$iRet = _WinAPI_WaitForSingleObject($hConsoleInput, $iTime)
-	If @error Or ($iRet = -1) Then Return SetError(1, 0, "")
-	If $iRet = 0x00000102 Then Return SetExtended(1, "")
+	Local $ret = DllCall($hDll, "dword", "WaitForSingleObject", "handle", $hConsoleInput, "dword", $iTime)
+	If @error Or ($ret[0] = -1) Then Return SetError(1, 0, "")
+	If $ret[0] = 0x00000102 Then Return SetExtended(1, "")
 
 	; read input
 	; get console mode
-	$modeOrig = _Console_GetMode($hConsoleInput, $hDll)
-
+	Local $modeOrig = _Console_GetMode($hConsoleInput, $hDll)
 	; remove LINE_INPUT
 	_Console_SetMode($hConsoleInput, BitAND($modeOrig, BitNOT($ENABLE_LINE_INPUT)), $hDll)
-	$charOut = _Console_ReadConsole($hConsoleInput, 1, $fUnicode, $hDll)
-
+	Local $charOut = _Console_ReadConsole($hConsoleInput, 1, $fUnicode, $hDll)
+	; flush any remaining input records
+	_Console_FlushInputBuffer($hConsoleInput, $hDll)
 	; restore mode
 	_Console_SetMode($hConsoleInput, $modeOrig, $hDll)
 
@@ -2627,37 +2679,48 @@ EndFunc   ;==>_Console_Pause
 ; #FUNCTION# ====================================================================================================================
 ; Name...........: _Console_Read
 ; Description ...: Reads data from the current console input buffer and removes it from the buffer.
-; Syntax.........: _Console_Read( [ $fUnicode [, $hDll ]] )
-; Parameters ....: $fUnicode            - If 'True' then the unicode version will be used. If 'False' then ANSI is used.
+; Syntax.........: _Console_Read( [ $fEcho [, $fUnicode [, $hDll ]]] )
+; Parameters ....: $fEcho               - If 'True' then input is read and echoed until a carriage return. If 'False' then input
+;                                         is read, NOT echoed, and returned one character at a time.
+;                  $fUnicode            - If 'True' then the unicode version will be used. If 'False' then ANSI is used.
 ;                  $hDll                - A handle to a dll to use. This prevents constant opening of the dll which could slow it
 ;                                         down. If you are calling lots of functions from the same dll then this recommended.
 ; Return values .: Success              - The data from the console input buffer read.
 ;                  Failure              - A blank string.
 ; Author ........: Matt Diesel (Mat)
-; Modified.......:
+; Modified.......: Erik Pilsits (Wraithdu)
 ; Remarks .......: This Reads characters until a linebreak is found.
 ; Related .......:
 ; Link ..........: http://msdn.microsoft.com/en-us/library/ms684958.aspx
 ; Example .......: No
 ; ===============================================================================================================================
-Func _Console_Read($fUnicode = Default, $hDll = -1)
+Func _Console_Read($fEcho = True, $fUnicode = Default, $hDll = -1)
 	Local $sRet = "", $sTemp, $hConsoleInput = _Console_GetStdHandle($STD_INPUT_HANDLE, $hDll)
 
 	If $fUnicode = Default Then $fUnicode = $__gfUnicode
 
-	; make sure LINE_INPUT is ON
 	Local $modeOrig = _Console_GetMode($hConsoleInput, $hDll)
-	_Console_SetMode($hConsoleInput, BitOR($modeOrig, $ENABLE_LINE_INPUT), $hDll)
 
-	While 1
-		$sTemp = _Console_ReadConsole($hConsoleInput, 1, $fUnicode, $hDll)
-		If $sTemp = @CR Then
-			; read the leftover @LF
-			_Console_ReadConsole($hConsoleInput, 1, $fUnicode, $hDll)
-			ExitLoop
-		EndIf
-		$sRet &= $sTemp
-	WEnd
+	If $fEcho Then
+		; read input, echo each character, until carriage return
+		; make sure LINE_INPUT is ON
+		_Console_SetMode($hConsoleInput, BitOR($modeOrig, $ENABLE_LINE_INPUT), $hDll)
+
+		While 1
+			$sTemp = _Console_ReadConsole($hConsoleInput, 1, $fUnicode, $hDll)
+			If $sTemp = @CR Then
+				; read the leftover @LF
+				_Console_ReadConsole($hConsoleInput, 1, $fUnicode, $hDll)
+				ExitLoop
+			EndIf
+			$sRet &= $sTemp
+		WEnd
+	Else
+		; read input, NO echo, return immediately after each record is read
+		; remove LINE_INPUT
+		_Console_SetMode($hConsoleInput, BitAND($modeOrig, BitNOT($ENABLE_LINE_INPUT)), $hDll)
+		$sRet = _Console_ReadConsole($hConsoleInput, 1, $fUnicode, $hDll)
+	EndIf
 
 	; restore console mode
 	_Console_SetMode($hConsoleInput, $modeOrig, $hDll)
@@ -2694,7 +2757,7 @@ Func _Console_ReadConsole($hConsoleInput, $nNumberOfCharsToRead, $fUnicode = Def
 	If $fUnicode Then
 		$tBuffer = DllStructCreate("wchar[" & $nNumberOfCharsToRead & "]")
 
-		$aResult = DllCall($hDll, "bool", "ReadConsoleW", _
+		$aResult = DllCall($hDll, "BOOL", "ReadConsoleW", _
 				"handle", $hConsoleInput, _
 				"ptr", DllStructGetPtr($tBuffer), _
 				"dword", $nNumberOfCharsToRead, _
@@ -2703,7 +2766,7 @@ Func _Console_ReadConsole($hConsoleInput, $nNumberOfCharsToRead, $fUnicode = Def
 	Else
 		$tBuffer = DllStructCreate("char[" & ($nNumberOfCharsToRead + 1) & "]")
 
-		$aResult = DllCall($hDll, "bool", "ReadConsoleA", _
+		$aResult = DllCall($hDll, "BOOL", "ReadConsoleA", _
 				"handle", $hConsoleInput, _
 				"ptr", DllStructGetPtr($tBuffer), _
 				"dword", $nNumberOfCharsToRead, _
@@ -2715,6 +2778,50 @@ Func _Console_ReadConsole($hConsoleInput, $nNumberOfCharsToRead, $fUnicode = Def
 
 	Return SetExtended($aResult[4], DllStructGetData($tBuffer, 1))
 EndFunc   ;==>_Console_ReadConsole
+#region WIP
+
+Func _Console_ReadInputRecord($hConsoleInput = -1, $fUnicode = Default, $hDll = -1)
+	Local $tInputRecord, $iResult
+
+	If $hDll = -1 Then $hDll = $__gvKernel32
+	If $hConsoleInput = -1 Then $hConsoleInput = _Console_GetStdHandle($STD_INPUT_HANDLE, $hDll)
+	If $fUnicode = Default Then $fUnicode = $__gfUnicode
+
+	$tInputRecord = DllStructCreate($tagINPUT_RECORD)
+
+	$iResult = _Console_REadInput($hConsoleInput, DllStructGetPtr($tInputRecord), 1, $fUnicode, $hDll)
+	If $iResult = 0 Then Return SetError(@error, @extended, 0)
+
+	Return $tInputRecord
+EndFunc   ;==>_Console_ReadInputRecord
+
+; Returns No. events read, zero = fail
+Func _Console_ReadInput($hConsoleInput, $pBuffer, $iLength, $fUnicode = Default, $hDll = -1)
+	Local $aResult
+
+	If $fUnicode = Default Then $fUnicode = $__gfUnicode
+	If $hDll = -1 Then $hDll = $__gvKernel32
+	If $hConsoleInput = -1 Then $hConsoleInput = _Console_GetStdHandle($STD_INPUT_HANDLE, $hDll)
+
+	If $fUnicode Then
+		$aResult = DllCall($hDll, "BOOL", "ReadConsoleInputW", _
+				"handle", $hConsoleInput, _
+				"ptr", $pBuffer, _
+				"int", $iLength, _
+				"int*", 0)
+	Else
+		$aResult = DllCall($hDll, "BOOL", "ReadConsoleInputA", _
+				"handle", $hConsoleInput, _
+				"ptr", $pBuffer, _
+				"int", $iLength, _
+				"int*", 0)
+	EndIf
+
+	If @error Or (Not $aResult[0]) Then Return SetError(@error, @extended, 0)
+
+	Return $aResult[4]
+EndFunc   ;==>_Console_ReadInput
+#endregion WIP
 
 ; #FUNCTION# ====================================================================================================================
 ; Name ..........: _Console_ReadOutputCharacter
@@ -4001,24 +4108,23 @@ EndFunc   ;==>_Console_WriteLine
 ;                                         down. If you are calling lots of functions from the same dll then this recommended.
 ; Return values .: Success              - True
 ;                  Failure              - False and sets the @error flag.
-; Author(s) .....: Matt Diesel (Mat)
+; Author(s) .....: Erik Pilsits (wraithdu)
 ; Modified ......:
 ; Remarks .......: If the number of attributes to be written to extends beyond the end of the specified row in the console screen
 ;                  buffer, attributes are written to the next row. If the number of attributes to be written to extends beyond
 ;                  the end of the console screen buffer, the attributes are written up to the end of the console screen buffer.
 ;                  The character values at the positions written to are not changed.
-; Related .......: _Console_WriteOutputCharacter, _Console_ReadOutputAttribute
+; Related .......: _Console_WriteOutputCharacter, _Console_ReadOutputAttribute, _Console_FillOutputAttribute
 ; Link ..........: http://msdn.microsoft.com/en-us/library/ms687407.aspx
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_WriteOutputAttribute($hConsole, $aiAttributes, $iX, $iY, $iStart = 0, $iEnd = -1, $hDll = -1)
 	Local $tCOORD, $iBnd, $tAttributes, $aResult
 
-	$iBnd = UBound($aiAttributes, 1) - 1
 	If Not IsArray($aiAttributes) Then Return SetError(1, 0, False)
 	If UBound($aiAttributes, 0) <> 1 Then Return SetError(1, 0, False)
-	If $iEnd > $iBnd Then Return SetError(1, 0, False)
-	If $iEnd < $iStart Then $iEnd = $iBnd
+	$iBnd = UBound($aiAttributes) - 1
+	If $iEnd > $iBnd Or $iEnd < $iStart Then $iEnd = $iBnd
 
 	If $hDll = -1 Then $hDll = $__gvKernel32
 	If $hConsole = -1 Then $hConsole = _Console_GetStdHandle($STD_OUTPUT_HANDLE, $hDll)
@@ -4027,18 +4133,18 @@ Func _Console_WriteOutputAttribute($hConsole, $aiAttributes, $iX, $iY, $iStart =
 
 	$tAttributes = DllStructCreate("word[" & ($iEnd - $iStart + 1) & "]")
 	For $i = $iStart To $iEnd
-		DllStructSetData($tAttributes, 1, $iStart + $i + 1)
+		DllStructSetData($tAttributes, 1, $aiAttributes[$i], $i - $iStart + 1)
 	Next
 
 	$aResult = DllCall($hDll, "bool", "WriteConsoleOutputAttribute", _
 			"handle", $hConsole, _
-			"ptr", DllStructGetPtr($tAttributes), _
-			"dword", $iBnd, _
+			"struct*", $tAttributes, _
+			"dword", $iEnd - $iStart + 1, _
 			"dword", $tCOORD, _
 			"dword*", 0)
 	If @error Then Return SetError(@error, @extended, False)
 
-	Return SetExtended($aResult[4], $aResult[0] <> 0)
+	Return SetExtended($aResult[5], $aResult[0] <> 0)
 EndFunc   ;==>_Console_WriteOutputAttribute
 
 ; #FUNCTION# ====================================================================================================================
@@ -4091,6 +4197,4 @@ Func _Console_WriteOutputCharacter($hConsole, $sText, $iX, $iY, $fUnicode = Defa
 				"dword*", 0)
 	EndIf
 	If @error Then Return SetError(@error, @extended, False)
-
-	Return SetExtended($aResult[4], $aResult[0] <> 0)
 EndFunc   ;==>_Console_WriteOutputCharacter
