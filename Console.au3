@@ -1679,7 +1679,7 @@ EndFunc   ;==>_Console_GetHistoryNumberOfBuffers
 ; #FUNCTION# ====================================================================================================
 ; Name...........: _Console_GetInput
 ; Description....: Get user input from the console
-; Syntax.........: _Console_GetInput([$sPrompt = ""[, $iLen = 0[, $autoReturn = False[, $validateEach = ""[, $validateFinal = ""[, $hideInput = False[, $maskChar = ""]]]]]]])
+; Syntax.........: _Console_GetInput( [$sPrompt [, $iLen [, $autoReturn [, $validateEach [, $validateFinal [, $hideInput [, $maskChar ]]]]]]] )
 ; Parameters.....: $sPrompt             - [Optional] Prompt text to display before input
 ;                  $iLen                - [Optional] Maximum length of input
 ;                  $autoReturn          - [Optional] Automatically return when $iLen is reached
@@ -1693,7 +1693,7 @@ EndFunc   ;==>_Console_GetHistoryNumberOfBuffers
 ;
 ; Return values..: Success - Input string
 ;                  Failure - Empty string
-; Author.........: Erik Pilsits
+; Author.........: Erik Pilsits (Wraithdu)
 ; Modified.......:
 ; Remarks........:
 ; Related........:
@@ -1704,12 +1704,15 @@ Func _Console_GetInput($sPrompt = "", $iLen = 0, $autoReturn = False, $validateE
 	$iLen = Abs($iLen)
 	$maskChar = StringLeft($maskChar, 1)
 	If $sPrompt <> "" Then _Console_Write($sPrompt, $fUnicode, $hDll)
-	Local $sChars = "", $sIn, $aErase[3] = [ChrW(8), " ", ChrW(8)]
+	Local $sChars = "", $sIn, $aPos
+	; get starting cursor position
+	Local $aPosStart = _Console_GetCursorPosition(-1, $hDll)
+	Local $aSize = _Console_GetScreenBufferSize(-1, $hDll)
 	While True
-		$sIn = DllCall("msvcrt.dll", "int:cdecl", "_getwch")
-		If $sIn[0] < 32 Then
+		$sIn = AscW(_Console_Read(False, $fUnicode, $hDll))
+		If $sIn < 32 Then
 			; control characters
-			Switch $sIn[0]
+			Switch $sIn
 				Case 13 ; ENTER
 					; validate if no length or length not reached
 					; otherwise validation was performed upon input
@@ -1718,11 +1721,9 @@ Func _Console_GetInput($sPrompt = "", $iLen = 0, $autoReturn = False, $validateE
 							; failed validation
 							; erase entire input
 							If Not $hideInput Or ($hideInput And ($maskChar <> "")) Then
-								For $i = 0 To 2
-									For $j = 1 To StringLen($sChars)
-										_Console_Write($aErase[$i], $fUnicode, $hDll)
-									Next
-								Next
+								; use starting position
+								_Console_FillOutputCharacter(-1, " ", StringLen($sChars), $aPosStart[0], $aPosStart[1], $fUnicode, $hDll)
+								_Console_SetCursorPosition(-1, $aPosStart[0], $aPosStart[1])
 							EndIf
 							$sChars = ""
 							ContinueLoop
@@ -1732,7 +1733,17 @@ Func _Console_GetInput($sPrompt = "", $iLen = 0, $autoReturn = False, $validateE
 					ExitLoop
 				Case 8 ; BACKSPACE
 					If $sChars <> "" Then
-						If Not $hideInput Or ($hideInput And ($maskChar <> "")) Then _Console_Write(ChrW(8) & " " & ChrW(8), $fUnicode, $hDll)
+						If Not $hideInput Or ($hideInput And ($maskChar <> "")) Then
+							; use current position
+							$aPos = _Console_GetCursorPosition(-1, $hDll)
+							If $aPos[0] = 0 Then
+								; beginning of line of wrapped text
+								$aPos[0] = $aSize[0]
+								$aPos[1] -= 1
+							EndIf
+							_Console_WriteOutputCharacter(-1, " ", $aPos[0] - 1, $aPos[1], $fUnicode, $hDll)
+							_Console_SetCursorPosition(-1, $aPos[0] - 1, $aPos[1], $hDll)
+						EndIf
 						$sChars = StringTrimRight($sChars, 1)
 					EndIf
 				Case 27 ; ESCAPE
@@ -1743,7 +1754,7 @@ Func _Console_GetInput($sPrompt = "", $iLen = 0, $autoReturn = False, $validateE
 			; length reached, do nothing
 			If $iLen And (StringLen($sChars) >= $iLen) Then ContinueLoop
 			; get character
-			$sIn = ChrW($sIn[0])
+			$sIn = ChrW($sIn)
 			; validate each character?
 			If ($validateEach <> "") And (Not StringRegExp($sIn, $validateEach, 0)) Then ContinueLoop
 			$sChars &= $sIn
@@ -2627,7 +2638,7 @@ EndFunc   ;==>_Console_GetWindow
 ;                  Failure              - Empty string and sets @error
 ;                                       | 1 - WaitForSingleObject failed
 ;                  @extended            - 1 if wait timed out, otherwise 0
-; Author ........: Erik Pilsits
+; Author ........: Erik Pilsits (Wraithdu)
 ; Modified ......:
 ; Remarks .......: Returns once something has been typed into console.
 ; Related .......:
@@ -2635,10 +2646,7 @@ EndFunc   ;==>_Console_GetWindow
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_Pause($sMsg = Default, $iTime = -1, $fUnicode = Default, $hDll = -1)
-	Local $hConsoleInput, $iRet, $modeOrig, $charOut
-
 	If $fUnicode = Default Then $fUnicode = $__gfUnicode
-	If $hDll = -1 Then $hDll = $__gvKernel32
 
 	If $sMsg = Default Then
 		_Console_Write("Press any key to continue . . . ", $fUnicode, $hDll)
@@ -2646,23 +2654,22 @@ Func _Console_Pause($sMsg = Default, $iTime = -1, $fUnicode = Default, $hDll = -
 		_Console_Write($sMsg, $fUnicode, $hDll)
 	EndIf
 
-	$hConsoleInput = _Console_GetStdHandle($STD_INPUT_HANDLE, $hDll)
+	Local $hConsoleInput = _Console_GetStdHandle($STD_INPUT_HANDLE, $hDll)
 
 	; wait for input
 	_Console_FlushInputBuffer($hConsoleInput, $hDll)
-
-	$iRet = _WinAPI_WaitForSingleObject($hConsoleInput, $iTime)
-	If @error Or ($iRet = -1) Then Return SetError(1, 0, "")
-	If $iRet = 0x00000102 Then Return SetExtended(1, "")
+	Local $ret = DllCall($hDll, "dword", "WaitForSingleObject", "handle", $hConsoleInput, "dword", $iTime)
+	If @error Or ($ret[0] = -1) Then Return SetError(1, 0, "")
+	If $ret[0] = 0x00000102 Then Return SetExtended(1, "")
 
 	; read input
 	; get console mode
-	$modeOrig = _Console_GetMode($hConsoleInput, $hDll)
-
+	Local $modeOrig = _Console_GetMode($hConsoleInput, $hDll)
 	; remove LINE_INPUT
 	_Console_SetMode($hConsoleInput, BitAND($modeOrig, BitNOT($ENABLE_LINE_INPUT)), $hDll)
-	$charOut = _Console_ReadConsole($hConsoleInput, 1, $fUnicode, $hDll)
-
+	Local $charOut = _Console_ReadConsole($hConsoleInput, 1, $fUnicode, $hDll)
+	; flush any remaining input records
+	_Console_FlushInputBuffer($hConsoleInput, $hDll)
 	; restore mode
 	_Console_SetMode($hConsoleInput, $modeOrig, $hDll)
 
@@ -2672,37 +2679,48 @@ EndFunc   ;==>_Console_Pause
 ; #FUNCTION# ====================================================================================================================
 ; Name...........: _Console_Read
 ; Description ...: Reads data from the current console input buffer and removes it from the buffer.
-; Syntax.........: _Console_Read( [ $fUnicode [, $hDll ]] )
-; Parameters ....: $fUnicode            - If 'True' then the unicode version will be used. If 'False' then ANSI is used.
+; Syntax.........: _Console_Read( [ $fEcho [, $fUnicode [, $hDll ]]] )
+; Parameters ....: $fEcho               - If 'True' then input is read and echoed until a carriage return. If 'False' then input
+;                                         is read, NOT echoed, and returned one character at a time.
+;                  $fUnicode            - If 'True' then the unicode version will be used. If 'False' then ANSI is used.
 ;                  $hDll                - A handle to a dll to use. This prevents constant opening of the dll which could slow it
 ;                                         down. If you are calling lots of functions from the same dll then this recommended.
 ; Return values .: Success              - The data from the console input buffer read.
 ;                  Failure              - A blank string.
 ; Author ........: Matt Diesel (Mat)
-; Modified.......:
+; Modified.......: Erik Pilsits (Wraithdu)
 ; Remarks .......: This Reads characters until a linebreak is found.
 ; Related .......:
 ; Link ..........: http://msdn.microsoft.com/en-us/library/ms684958.aspx
 ; Example .......: No
 ; ===============================================================================================================================
-Func _Console_Read($fUnicode = Default, $hDll = -1)
+Func _Console_Read($fEcho = True, $fUnicode = Default, $hDll = -1)
 	Local $sRet = "", $sTemp, $hConsoleInput = _Console_GetStdHandle($STD_INPUT_HANDLE, $hDll)
 
 	If $fUnicode = Default Then $fUnicode = $__gfUnicode
 
-	; make sure LINE_INPUT is ON
 	Local $modeOrig = _Console_GetMode($hConsoleInput, $hDll)
-	_Console_SetMode($hConsoleInput, BitOR($modeOrig, $ENABLE_LINE_INPUT), $hDll)
 
-	While 1
-		$sTemp = _Console_ReadConsole($hConsoleInput, 1, $fUnicode, $hDll)
-		If $sTemp = @CR Then
-			; read the leftover @LF
-			_Console_ReadConsole($hConsoleInput, 1, $fUnicode, $hDll)
-			ExitLoop
-		EndIf
-		$sRet &= $sTemp
-	WEnd
+	If $fEcho Then
+		; read input, echo each character, until carriage return
+		; make sure LINE_INPUT is ON
+		_Console_SetMode($hConsoleInput, BitOR($modeOrig, $ENABLE_LINE_INPUT), $hDll)
+
+		While 1
+			$sTemp = _Console_ReadConsole($hConsoleInput, 1, $fUnicode, $hDll)
+			If $sTemp = @CR Then
+				; read the leftover @LF
+				_Console_ReadConsole($hConsoleInput, 1, $fUnicode, $hDll)
+				ExitLoop
+			EndIf
+			$sRet &= $sTemp
+		WEnd
+	Else
+		; read input, NO echo, return immediately after each record is read
+		; remove LINE_INPUT
+		_Console_SetMode($hConsoleInput, BitAND($modeOrig, BitNOT($ENABLE_LINE_INPUT)), $hDll)
+		$sRet = _Console_ReadConsole($hConsoleInput, 1, $fUnicode, $hDll)
+	EndIf
 
 	; restore console mode
 	_Console_SetMode($hConsoleInput, $modeOrig, $hDll)
