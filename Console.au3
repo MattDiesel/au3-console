@@ -759,12 +759,12 @@ Func _Console_FillOutputAttribute($hConsoleOutput, $iAttribute, $nLength, $iX, $
 
 	$tCOORD = BitShift($iY, -16) + $iX
 
-	$aResult = DllCall($hDll, "bool", "FillConsoleOutputAttribute", _
-			"handle", $hConsoleOutput, _
-			"word", $iAttribute, _
-			"dword", $nLength, _
-			"int", $tCOORD, _
-			"dword*", 0)
+	$aResult = DllCall($hDll, "BOOL", "FillConsoleOutputAttribute", _
+			"HANDLE", $hConsoleOutput, _
+			"WORD", $iAttribute, _
+			"DWORD", $nLength, _
+			"INT", $tCOORD, _
+			"DWORD*", 0)
 	If @error Then Return SetError(@error, @extended, False)
 
 	Return SetExtended($aResult[5], $aResult[0] <> 0)
@@ -4096,7 +4096,7 @@ EndFunc   ;==>_Console_WriteLine
 ;                  buffer, attributes are written to the next row. If the number of attributes to be written to extends beyond
 ;                  the end of the console screen buffer, the attributes are written up to the end of the console screen buffer.
 ;                  The character values at the positions written to are not changed.
-; Related .......: _Console_WriteOutputCharacter, _Console_ReadOutputAttribute
+; Related .......: _Console_WriteOutputCharacter, _Console_ReadOutputAttribute, _Console_FillOutputAttribute
 ; Link ..........: http://msdn.microsoft.com/en-us/library/ms687407.aspx
 ; Example .......: No
 ; ===============================================================================================================================

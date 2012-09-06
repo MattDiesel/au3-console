@@ -1,4 +1,4 @@
-#include 'Console.au3'
+#include '../Console.au3'
 #include <String.au3>
 
 _Console_Alloc()
