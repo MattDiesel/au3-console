@@ -126,20 +126,6 @@
 ; $tagSMALL_RECT
 ; ===============================================================================================================================
 
-; #VARIABLES# ===================================================================================================================
-
-; Use this variable to set a global handle to kernel32.dll instead of using parameters
-; $__gvKernel32 = DllOpen("kernel32.dll")
-Global $__gvKernel32 = "kernel32.dll"
-
-; Use this variable to set a global default for unicode / ANSI (Unicode = true)
-Global $__gfUnicode = True
-
-; Determines if running under SciTE or compiled as a CUI app, then uses ConsoleWrite in _Console_WriteConsole function
-Global $__gfIsCUI = (_WinAPI_GetStdHandle(1) <> 0)
-
-; ===============================================================================================================================
-
 ; #CONSTANTS# ===================================================================================================================
 
 ; Standard device flags
@@ -265,6 +251,20 @@ Global Const $CONSOLE_FULLSCREEN_HARDWARE = 2 ; console owns the hardware
 ; WinCon.h (931 - 932)
 Global Const $CONSOLE_FULLSCREEN_MODE = 1
 Global Const $CONSOLE_WINDOWED_MODE = 2
+; ===============================================================================================================================
+
+; #VARIABLES# ===================================================================================================================
+
+; Use this variable to set a global handle to kernel32.dll instead of using parameters
+; $__gvKernel32 = DllOpen("kernel32.dll")
+Global $__gvKernel32 = "kernel32.dll"
+
+; Use this variable to set a global default for unicode / ANSI (Unicode = true)
+Global $__gfUnicode = True
+
+; Determines if running under SciTE or compiled as a CUI app, then uses ConsoleWrite in _Console_WriteConsole function
+Global $__gfIsCUI = (_Console_GetStdHandle($STD_OUTPUT_HANDLE) <> 0)
+
 ; ===============================================================================================================================
 
 ; #STRUCTURE# ===================================================================================================================
@@ -1773,18 +1773,27 @@ EndFunc   ;==>_Console_GetHistoryNumberOfBuffers
 ; #FUNCTION# ====================================================================================================
 ; Name...........: _Console_GetInput
 ; Description....: Get user input from the console
-; Syntax.........: _Console_GetInput( [$sPrompt [, $iLen [, $autoReturn [, $validateEach [, $validateFinal [, $hideInput [, $maskChar ]]]]]]] )
+; Syntax.........: _Console_GetInput( [
+;                          $sPrompt [,
+;                          $iLen [,
+;                          $autoReturn [,
+;                          $validateEach [,
+;                          $validateFinal [,
+;                          $hideInput [,
+;                          $maskChar ]]]]]]] )
 ; Parameters.....: $sPrompt             - [Optional] Prompt text to display before input
 ;                  $iLen                - [Optional] Maximum length of input
 ;                  $autoReturn          - [Optional] Automatically return when $iLen is reached
 ;                  $validateEach        - [Optional] Regular expression to validate each character as it is input
 ;                  $validateFinal       - [Optional] Regular expression to validate the final input
 ;                  $hideInput           - [Optional] Do no print input characters
-;                  $maskChar            - [Optional] If $hideInput is true, the character to print instead of input
-;                  $fUnicode            - If 'True' then the unicode version will be used. If 'False' then ANSI is used.
-;                  $hDll                - A handle to a dll to use. This prevents constant opening of the dll which could slow it
-;                                         down. If you are calling lots of functions from the same dll then this recommended.
-;
+;                  $maskChar            - [Optional] If $hideInput is true, the character to print instead of
+;                                         input
+;                  $fUnicode            - If 'True' then the unicode version will be used. If 'False' then ANSI
+;                                         is used.
+;                  $hDll                - A handle to a dll to use. This prevents constant opening of the dll
+;                                         which could slow it down. If you are calling lots of functions from the
+;                                         same dll then this recommended.
 ; Return values..: Success - Input string
 ;                  Failure - Empty string
 ; Author.........: Erik Pilsits (Wraithdu)
@@ -1794,7 +1803,15 @@ EndFunc   ;==>_Console_GetHistoryNumberOfBuffers
 ; Link...........:
 ; Example........:
 ; ===============================================================================================================
-Func _Console_GetInput($sPrompt = "", $iLen = 0, $autoReturn = False, $validateEach = "", $validateFinal = "", $hideInput = False, $maskChar = "", $fUnicode = Default, $hDll = -1)
+Func _Console_GetInput($sPrompt = "", _
+			$iLen = 0, _
+			$autoReturn = False, _
+			$validateEach = "", _
+			$validateFinal = "", _
+			$hideInput = False, _
+			$maskChar = "", _
+			$fUnicode = Default, _
+			$hDll = -1)
 	$iLen = Abs($iLen)
 	$maskChar = StringLeft($maskChar, 1)
 	If $sPrompt <> "" Then _Console_Write($sPrompt, $fUnicode, $hDll)
@@ -2740,6 +2757,8 @@ EndFunc   ;==>_Console_GetWindow
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_Pause($sMsg = Default, $iTime = -1, $fUnicode = Default, $hDll = -1)
+	Local $ret
+
 	If $fUnicode = Default Then $fUnicode = $__gfUnicode
 
 	If $sMsg = Default Then
@@ -2752,9 +2771,8 @@ Func _Console_Pause($sMsg = Default, $iTime = -1, $fUnicode = Default, $hDll = -
 
 	; wait for input
 	_Console_FlushInputBuffer($hConsoleInput, $hDll)
-	Local $ret = DllCall($hDll, "dword", "WaitForSingleObject", "handle", $hConsoleInput, "dword", $iTime)
-	If @error Or ($ret[0] = -1) Then Return SetError(1, 0, "")
-	If $ret[0] = 0x00000102 Then Return SetExtended(1, "")
+	$ret = _WinAPI_WaitForSingleObject($hConsoleInput, $iTime)
+	If $ret = 0x0102 Then Return SetExtended(1, "")
 
 	; read input
 	; get console mode
@@ -3435,13 +3453,13 @@ Func _Console_SetCurrentFontEx($hConsoleOutput, $iFont, $iWidth, $iHeight, $iFon
 	If $hDll = -1 Then $hDll = $__gvKernel32
 
 	$tConsoleCurrentFontEx = DllStructCreate($tagCONSOLE_FONT_INFOEX)
-	.$tConsoleCurrentFontEx.Font = $iFont
-	.$tConsoleCurrentFontEx.X = $iWidth
-	.$tConsoleCurrentFontEx.Y = $iHeight
-	.$tConsoleCurrentFontEx.FontFamily = $iFontFamily
-	.$tConsoleCurrentFontEx.FontWeight = $iFontWeight
-	.$tConsoleCurrentFontEx.FaceName = $sFaceName
-	.$tConsoleCurrentFontEx.Size = DllStructGetSize($tConsoleCurrentFontEx)
+	$tConsoleCurrentFontEx.Font = $iFont
+	$tConsoleCurrentFontEx.X = $iWidth
+	$tConsoleCurrentFontEx.Y = $iHeight
+	$tConsoleCurrentFontEx.FontFamily = $iFontFamily
+	$tConsoleCurrentFontEx.FontWeight = $iFontWeight
+	$tConsoleCurrentFontEx.FaceName = $sFaceName
+	$tConsoleCurrentFontEx.Size = DllStructGetSize($tConsoleCurrentFontEx)
 
 	$aResult = DllCall($hDll, "bool", "SetCurrentConsoleFontEx", _
 			"handle", $hConsoleOutput, _
@@ -3901,7 +3919,7 @@ EndFunc   ;==>_Console_SetScreenBufferSize
 ;                  can specify the CONIN$ value in a call to the _WinApi_CreateFile function to get a handle to a console's input
 ;                  buffer. Similarly, you can specify the CONOUT$ value to get a handle to the console's active screen buffer.
 ; Related .......: _Console_GetStdHandle
-; Link ..........: http://msdn.microsoft.com/en-us/library/ms686244(VS.85).aspx
+; Link ..........: http://msdn.microsoft.com/en-us/library/ms686244.aspx
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_SetStdHandle($nStdHandle, $hHandle, $hDll = -1)
@@ -4293,5 +4311,6 @@ Func _Console_WriteOutputCharacter($hConsole, $sText, $iX, $iY, $fUnicode = Defa
 				"dword", $tCOORD, _
 				"dword*", 0)
 	EndIf
-	Return SetError(@error, @extended, @error = 0)
+
+	Return SetError(@error, @extended, $aResult[0])
 EndFunc   ;==>_Console_WriteOutputCharacter
