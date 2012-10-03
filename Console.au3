@@ -2867,7 +2867,7 @@ Func _Console_ReadConsole($hConsoleInput, $nNumberOfCharsToRead, $fUnicode = Def
 	If $hDll = -1 Then $hDll = $__gvKernel32
 
 	If $fUnicode Then
-		$tBuffer = DllStructCreate("wchar buffer[" & ($nNumberOfCharsToRead + 1) & "]")
+		$tBuffer = DllStructCreate("wchar buffer[" & $nNumberOfCharsToRead & "]")
 
 		$aResult = DllCall($hDll, "BOOL", "ReadConsoleW", _
 				"handle", $hConsoleInput, _
@@ -2876,7 +2876,7 @@ Func _Console_ReadConsole($hConsoleInput, $nNumberOfCharsToRead, $fUnicode = Def
 				"dword*", 0, _
 				"ptr", 0)
 	Else
-		$tBuffer = DllStructCreate("char buffer[" & ($nNumberOfCharsToRead + 1) & "]")
+		$tBuffer = DllStructCreate("char buffer[" & $nNumberOfCharsToRead & "]")
 
 		$aResult = DllCall($hDll, "BOOL", "ReadConsoleA", _
 				"handle", $hConsoleInput, _
