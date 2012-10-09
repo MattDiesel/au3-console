@@ -533,7 +533,7 @@ Global Const $tagCONSOLE_SELECTION_INFO = "DWORD Flags; SHORT X; SHORT Y; SHORT 
 ; Author ........: Matt Diesel (Mat)
 ; Remarks .......: Enhanced keys for the IBM 101- and 102-key keyboards are the INS, DEL, HOME, END, PAGE UP, PAGE DOWN, and
 ;                  direction keys in the clusters to the left of the keypad; and the divide (/) and ENTER keys in the keypad.
-;
+;+
 ;                  Keyboard input events are generated when any key, including control keys, is pressed or released. However, the
 ;                  ALT key when pressed and released without combining with another character, has special meaning to the system
 ;                  and is not passed through to the application. Also, the CTRL+C key combination is not passed through if the
@@ -605,7 +605,7 @@ Global Const $tagKEY_EVENT_RECORD_A = "BOOL KeyDown; WORD RepeatCount; WORD Virt
 ; Author ........: Matt Diesel (Mat)
 ; Remarks .......: Enhanced keys for the IBM 101- and 102-key keyboards are the INS, DEL, HOME, END, PAGE UP, PAGE DOWN, and
 ;                  direction keys in the clusters to the left of the keypad; and the divide (/) and ENTER keys in the keypad.
-;
+;+
 ;                  Keyboard input events are generated when any key, including control keys, is pressed or released. However, the
 ;                  ALT key when pressed and released without combining with another character, has special meaning to the system
 ;                  and is not passed through to the application. Also, the CTRL+C key combination is not passed through if the
@@ -618,9 +618,46 @@ Global Const $tagKEY_EVENT_RECORD = $tagKEY_EVENT_RECORD_W
 
 #region WIP
 
-; Notes:
-;   Event record structures are up to 16 bytes on both 32 and 64 bit machines (winapi types have definite sizes).
-
+; #STRUCTURE# ===================================================================================================================
+; Name ..........: $tagMOUSE_EVENT_RECORD
+; Description ...: Describes a mouse input event in a console INPUT_RECORD structure.
+; Fields ........: MousePositionX       - The X coordinate of the location of the cursor, in terms of the console screen buffer's
+;                                         character-cell coordinates.
+;                  MousePositionY       - The Y coordinate of the location of the cursor, in terms of the console screen buffer's
+;                                         character-cell coordinates.
+;                  ButtonState          - The status of the mouse buttons. The least significant bit corresponds to the leftmost
+;                                         mouse button. The next least significant bit corresponds to the rightmost mouse button.
+;                                         The next bit indicates the next-to-leftmost mouse button. The bits then correspond left
+;                                         to right to the mouse buttons. A bit is 1 if the button was pressed.
+;+
+;                                         The following constants are defined for the first five mouse buttons:
+;                                         |FROM_LEFT_1ST_BUTTON_PRESSED - The leftmost mouse button.
+;                                         |FROM_LEFT_2ND_BUTTON_PRESSED - The second button from the left.
+;                                         |FROM_LEFT_3RD_BUTTON_PRESSED - The third button from the left.
+;                                         |FROM_LEFT_4TH_BUTTON_PRESSED - The fourth button from the left.
+;                                         |RIGHTMOST_BUTTON_PRESSED - The rightmost mouse button.
+;                  ControlKeyState      - The state of the control keys. This member can be one or more of the following values:
+;                                         |CAPSLOCK_ON - The CAPS LOCK light is on.
+;                                         |ENHANCED_KEY - The key is enhanced.
+;                                         |LEFT_ALT_PRESSED - The left ALT key is pressed.
+;                                         |LEFT_CTRL_PRESSED - The left CTRL key is pressed.
+;                                         |NUMLOCK_ON - The NUM LOCK light is on.
+;                                         |RIGHT_ALT_PRESSED - The right ALT key is pressed.
+;                                         |RIGHT_CTRL_PRESSED - The right CTRL key is pressed.
+;                                         |SCROLLLOCK_ON - The SCROLL LOCK light is on.
+;                                         |SHIFT_PRESSED - The SHIFT key is pressed.
+;                  EventFlags           - The type of mouse event. If this value is zero, it indicates a mouse button being
+;                                         pressed or released. Otherwise, this member is one of the following values.
+;                                         |DOUBLE_CLICK - The second click (button press) of a double-click occurred. The first click is returned as a regular button-press event.
+;                                         |MOUSE_HWHEELED - The horizontal mouse wheel was moved.
+;                                                           If the high word of the dwButtonState member contains a positive value, the wheel was rotated to the right. Otherwise, the wheel was rotated to the left. - 0x0001
+;                                                           A change in mouse position occurred.
+;                                         |MOUSE_WHEELED - The vertical mouse wheel was moved.
+;                                                          If the high word of the dwButtonState member contains a positive value, the wheel was rotated forward, away from the user. Otherwise, the wheel was rotated backward, toward the user.
+; Author ........: Matt Diesel (Mat)
+; Remarks .......:
+; Related .......:
+; ===============================================================================================================================
 Global Const $tagMOUSE_EVENT_RECORD = "SHORT MousePositionX; SHORT MousePositionY; DWORD ButtonState; DWORD ControlKeyState;" & _
 		"DWORD EventFlags;"
 
@@ -683,23 +720,14 @@ Global Const $tagSMALL_RECT = "SHORT Left; SHORT Top; SHORT Right; SHORT Bottom;
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_AddAlias($sSource, $sTarget, $sExeName = Default, $fUnicode = Default, $hDll = -1)
-	Local $aResult
-
 	If $sExeName = Default Then $sExeName = @AutoItExe
 	If $fUnicode = Default Then $fUnicode = $__gfUnicode
 	If $hDll = -1 Then $hDll = $__gvKernel32
 
-	If $fUnicode Then
-		$aResult = DllCall($hDll, "bool", "AddConsoleAliasW", _
-				"wstr", $sSource, _
-				"wstr", $sTarget, _
-				"wstr", $sExeName)
-	Else
-		$aResult = DllCall($hDll, "bool", "AddConsoleAliasA", _
-				"str", $sSource, _
-				"str", $sTarget, _
-				"str", $sExeName)
-	EndIf
+	Local $aResult = DllCall($hDll, "bool", "AddConsoleAlias" & ($fUnicode ? "A" : "W"), _
+			($fUnicode ? "w" : "") & "str", $sSource, _
+			($fUnicode ? "w" : "") & "str", $sTarget, _
+			($fUnicode ? "w" : "") & "str", $sExeName)
 	If @error Then Return SetError(@error, @extended, False)
 
 	Return $aResult[0] <> 0
@@ -724,11 +752,9 @@ EndFunc   ;==>_Console_AddAlias
 ; Example .......: Yes
 ; ===============================================================================================================================
 Func _Console_Alloc($hDll = -1)
-	Local $aResult
-
 	If $hDll = -1 Then $hDll = $__gvKernel32
 
-	$aResult = DllCall($hDll, "bool", "AllocConsole")
+	Local $aResult = DllCall($hDll, "bool", "AllocConsole")
 	If @error Then Return SetError(@error, @extended, 0)
 
 	Return $aResult[0] <> 0
@@ -752,11 +778,9 @@ EndFunc   ;==>_Console_Alloc
 ; Example .......:
 ; ===============================================================================================================================
 Func _Console_Attach($iProcessID = -1, $hDll = -1)
-	Local $aResult
-
 	If $hDll = -1 Then $hDll = $__gvKernel32
 
-	$aResult = DllCall($hDll, "bool", "AttachConsole", _
+	Local $aResult = DllCall($hDll, "bool", "AttachConsole", _
 			"dword", $iProcessID)
 	If @error Then Return SetError(@error, @extended, False)
 
@@ -788,13 +812,11 @@ EndFunc   ;==>_Console_Attach
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_CreateScreenBuffer($iDesiredAccess = -1, $iShareMode = -1, $hDll = -1)
-	Local $aResult
-
 	If $hDll = -1 Then $hDll = $__gvKernel32
 	If $iDesiredAccess = -1 Then $iDesiredAccess = BitOR(0x80000000, 0x40000000)
 	If $iShareMode = -1 Then $iShareMode = BitOR($FILE_SHARE_READ, $FILE_SHARE_WRITE)
 
-	$aResult = DllCall($hDll, "handle", "CreateConsoleScreenBuffer", _
+	Local $aResult = DllCall($hDll, "handle", "CreateConsoleScreenBuffer", _
 			"dword", $iDesiredAccess, _
 			"dword", $iShareMode, _
 			"ptr", 0, _
@@ -846,18 +868,14 @@ EndFunc   ;==>_Console_CreateScreenBuffer
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_FillOutputAttribute($hConsoleOutput, $iAttribute, $nLength, $iX, $iY, $hDll = -1)
-	Local $aResult, $tCOORD
-
 	If $hDll = -1 Then $hDll = $__gvKernel32
 	If $hConsoleOutput = -1 Then $hConsoleOutput = _Console_GetStdHandle($STD_OUTPUT_HANDLE, $hDll)
 
-	$tCOORD = BitShift($iY, -16) + $iX
-
-	$aResult = DllCall($hDll, "BOOL", "FillConsoleOutputAttribute", _
+	Local $aResult = DllCall($hDll, "BOOL", "FillConsoleOutputAttribute", _
 			"HANDLE", $hConsoleOutput, _
 			"WORD", $iAttribute, _
 			"DWORD", $nLength, _
-			"INT", $tCOORD, _
+			"INT", BitShift($iY, -16) + $iX, _
 			"DWORD*", 0)
 	If @error Then Return SetError(@error, @extended, False)
 
@@ -890,33 +908,16 @@ EndFunc   ;==>_Console_FillOutputAttribute
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_FillOutputCharacter($hConsoleOutput, $sCharacter, $nLength, $iX = 0, $iY = 0, $fUnicode = Default, $hDll = -1)
-	Local $aResult, $tCOORD
-
-	If $hConsoleOutput = -1 Then $hConsoleOutput = _Console_GetStdHandle($STD_OUTPUT_HANDLE, $hDll)
 	If $fUnicode = Default Then $fUnicode = $__gfUnicode
 	If $hDll = -1 Then $hDll = $__gvKernel32
+	If $hConsoleOutput = -1 Then $hConsoleOutput = _Console_GetStdHandle($STD_OUTPUT_HANDLE, $hDll)
 
-	$tCOORD = BitShift($iY, -16) + $iX
-
-	If $fUnicode Then
-		If IsString($sCharacter) Then $sCharacter = AscW($sCharacter)
-
-		$aResult = DllCall($hDll, "bool", "FillConsoleOutputCharacterW", _
-				"handle", $hConsoleOutput, _
-				"byte", $sCharacter, _
-				"dword", $nLength, _
-				"int", $tCOORD, _
-				"dword*", 0)
-	Else
-		If IsString($sCharacter) Then $sCharacter = Asc($sCharacter)
-
-		$aResult = DllCall($hDll, "bool", "FillConsoleOutputCharacterA", _
-				"handle", $hConsoleOutput, _
-				"byte", $sCharacter, _
-				"dword", $nLength, _
-				"int", $tCOORD, _
-				"dword*", 0)
-	EndIf
+    Local $aResult = DllCall("kernel32.dll", "bool", "FillConsoleOutputCharacter" & ($fUnicode ? "W" : "A"), _
+			"handle", $hConsoleOutput, _
+			"byte", IsString($sCharacter) ? ($fUnicode ? AscW($sCharacter) : Asc($sCharacter)) : $sCharacter, _
+			"dword", $nLength, _
+			"int", BitShift($iY, -16) + $iX, _
+			"dword*", 0)
 	If @error Then Return SetError(@error, @extended, False)
 
 	Return SetExtended($aResult[5], $aResult[0] <> 0)
@@ -942,12 +943,10 @@ EndFunc   ;==>_Console_FillOutputCharacter
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_FlushInputBuffer($hConsoleInput = -1, $hDll = -1)
-	Local $aResult
-
 	If $hDll = -1 Then $hDll = $__gvKernel32
 	If $hConsoleInput = -1 Then $hConsoleInput = _Console_GetStdHandle($STD_INPUT_HANDLE, $hDll)
 
-	$aResult = DllCall($hDll, "bool", "FlushConsoleInputBuffer", _
+	Local $aResult = DllCall($hDll, "bool", "FlushConsoleInputBuffer", _
 			"handle", $hConsoleInput)
 	If @error Then Return SetError(@error, @extended, False)
 
@@ -970,11 +969,9 @@ EndFunc   ;==>_Console_FlushInputBuffer
 ; Example .......: Yes
 ; ===============================================================================================================================
 Func _Console_Free($hDll = -1)
-	Local $aResult
-
 	If $hDll = -1 Then $hDll = $__gvKernel32
 
-	$aResult = DllCall($hDll, "bool", "FreeConsole")
+	Local $aResult = DllCall($hDll, "bool", "FreeConsole")
 	If @error Then Return SetError(@error, @extended, False)
 
 	Return $aResult[0] <> 0
@@ -1012,11 +1009,9 @@ EndFunc   ;==>_Console_Free
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_GenerateCtrlEvent($iCtrlEvent, $iProcessGroupId = 0, $hDll = -1)
-	Local $aResult
-
 	If $hDll = -1 Then $hDll = $__gvKernel32
 
-	$aResult = DllCall($hDll, "bool", "GenerateConsoleCtrlEvent", _
+	Local $aResult = DllCall($hDll, "bool", "GenerateConsoleCtrlEvent", _
 			"dword", $iCtrlEvent, _
 			"dword", $iProcessGroupId)
 	If @error Then Return SetError(@error, @extended, False)
@@ -1044,29 +1039,17 @@ EndFunc   ;==>_Console_GenerateCtrlEvent
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_GetAlias($sSource, $sExeName = -1, $fUnicode = Default, $hDll = -1)
-	Local $aResult, $tTargetBuffer
-
 	If $hDll = -1 Then $hDll = $__gvKernel32
 	If $fUnicode = Default Then $fUnicode = $__gfUnicode
 	If $sExeName = -1 Then $sExeName = @AutoItExe
 
-	If $fUnicode Then
-		$tTargetBuffer = DllStructCreate("wchar buffer[1024]")
+	Local $tTargetBuffer = DllStructCreate(($fUnicode ? "w" : "") & "char buffer[1024]")
 
-		$aResult = DllCall($hDll, "dword", "GetConsoleAliasW", _
-				"wstr", $sSource, _
-				"struct*", $tTargetBuffer, _
-				"dword", DllStructGetSize($tTargetBuffer), _
-				"wstr", $sExeName)
-	Else
-		$tTargetBuffer = DllStructCreate("char buffer[1024]")
-
-		$aResult = DllCall($hDll, "dword", "GetConsoleAliasA", _
-				"str", $sSource, _
-				"struct*", $tTargetBuffer, _
-				"dword", DllStructGetSize($tTargetBuffer), _
-				"str", $sExeName)
-	EndIf
+	Local $aResult = DllCall($hDll, "dword", "GetConsoleAlias" & ($fUnicode ? "A" : "W"), _
+			($fUnicode ? "w" : "") & "str", $sSource, _
+			"struct*", $tTargetBuffer, _
+			"dword", DllStructGetSize($tTargetBuffer), _
+			($fUnicode ? "w" : "") & "str", $sExeName)
 	If @error Or Not $aResult[0] Then Return SetError(@error, @extended, "")
 
 	Return $tTargetBuffer.buffer
@@ -1090,27 +1073,16 @@ EndFunc   ;==>_Console_GetAlias
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_GetAliases($sExeName = -1, $fUnicode = Default, $hDll = -1)
-	Local $aResult, $tAliasBuffer
-
 	If $sExeName = -1 Then $sExeName = @AutoItExe
 	If $fUnicode = Default Then $fUnicode = $__gfUnicode
 	If $hDll = -1 Then $hDll = $__gvKernel32
 
-	If $fUnicode Then
-		$tAliasBuffer = DllStructCreate("wchar buffer[" & _Console_GetAliasesLength($sExeName, True, $hDll) & "]")
+	Local $tAliasBuffer = DllStructCreate(($fUnicode ? "w" : "") & "char buffer[" & _Console_GetAliasesLength($sExeName, $fUnicode, $hDll) & "]")
 
-		$aResult = DllCall($hDll, "dword", "GetConsoleAliasesW", _
-				"struct*", $tAliasBuffer, _
-				"dword", DllStructGetSize($tAliasBuffer), _
-				"wstr", $sExeName)
-	Else
-		$tAliasBuffer = DllStructCreate("char[" & _Console_GetAliasesLength($sExeName, False, $hDll) & "]")
-
-		$aResult = DllCall($hDll, "dword", "GetConsoleAliasesA", _
-				"struct*", $tAliasBuffer, _
-				"dword", DllStructGetSize($tAliasBuffer), _
-				"str", $sExeName)
-	EndIf
+	Local $aResult = DllCall($hDll, "dword", "GetConsoleAliases" & ($fUnicode ? "A" : "W"), _
+			"struct*", $tAliasBuffer, _
+			"dword", DllStructGetSize($tAliasBuffer), _
+			($fUnicode ? "w" : "") & "str", $sExeName)
 	If @error Or Not $aResult[0] Then Return SetError(@error, @extended, 0)
 
 	Return StringRegExp($tAliasBuffer.buffer, "Source\d+=(.+?)\0", 3)
@@ -1135,19 +1107,12 @@ EndFunc   ;==>_Console_GetAliases
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_GetAliasesLength($sExeName = -1, $fUnicode = Default, $hDll = -1)
-	Local $aResult
-
 	If $sExeName = -1 Then $sExeName = @AutoItExe
 	If $fUnicode = Default Then $fUnicode = $__gfUnicode
 	If $hDll = -1 Then $hDll = $__gvKernel32
 
-	If $fUnicode Then
-		$aResult = DllCall($hDll, "dword", "GetConsoleAliasesLengthW", _
-				"wstr", $sExeName)
-	Else
-		$aResult = DllCall($hDll, "dword", "GetConsoleAliasesLengthA", _
-				"str", $sExeName)
-	EndIf
+	Local $aResult = DllCall($hDll, "dword", "GetConsoleAliasesLength" & ($fUnicode ? "A" : "W"), _
+			($fUnicode ? "w" : "") & "str", $sExeName)
 	If @error Then Return SetError(@error, @extended, 0)
 
 	If $fUnicode Then Return $aResult[0] / 2
@@ -1171,24 +1136,14 @@ EndFunc   ;==>_Console_GetAliasesLength
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_GetAliasExes($fUnicode = Default, $hDll = -1)
-	Local $aResult, $tExeNameBuffer
-
 	If $fUnicode = Default Then $fUnicode = $__gfUnicode
 	If $hDll = -1 Then $hDll = $__gvKernel32
 
-	If $fUnicode Then
-		$tExeNameBuffer = DllStructCreate("wchar buffer[" & _Console_GetAliasExesLength(True, $hDll) & "]")
+	Local $tExeNameBuffer = DllStructCreate(($fUnicode ? "w" : "") & "char buffer[" & _Console_GetAliasExesLength(True, $hDll) & "]")
 
-		$aResult = DllCall($hDll, "dword", "GetConsoleAliasExesW", _
-				"struct*", $tExeNameBuffer, _
-				"dword", DllStructGetSize($tExeNameBuffer))
-	Else
-		$tExeNameBuffer = DllStructCreate("char buffer[" & _Console_GetAliasExesLength(False, $hDll) & "]")
-
-		$aResult = DllCall($hDll, "dword", "GetConsoleAliasExesA", _
-				"struct*", $tExeNameBuffer, _
-				"dword", DllStructGetSize($tExeNameBuffer))
-	EndIf
+	Local $aResult = DllCall($hDll, "dword", "GetConsoleAliasExes" & ($fUnicode ? "A" : "W"), _
+			"struct*", $tExeNameBuffer, _
+			"dword", DllStructGetSize($tExeNameBuffer))
 	If @error Or Not $aResult[0] Then Return SetError(@error, @extended, "")
 
 	Return $tExeNameBuffer.buffer
@@ -1212,16 +1167,10 @@ EndFunc   ;==>_Console_GetAliasExes
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_GetAliasExesLength($fUnicode = Default, $hDll = -1)
-	Local $aResult
-
 	If $fUnicode = Default Then $fUnicode = $__gfUnicode
 	If $hDll = -1 Then $hDll = $__gvKernel32
 
-	If $fUnicode Then
-		$aResult = DllCall($hDll, "dword", "GetConsoleAliasExesLengthW")
-	Else
-		$aResult = DllCall($hDll, "dword", "GetConsoleAliasExesLengthA")
-	EndIf
+	Local $aResult = DllCall($hDll, "dword", "GetConsoleAliasExesLength" & ($fUnicode ? "A" : "W"))
 	If @error Then Return SetError(@error, @extended, 0)
 
 	If $fUnicode Then Return $aResult[0] / 2
@@ -1246,11 +1195,9 @@ EndFunc   ;==>_Console_GetAliasExesLength
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_GetCP($hDll = -1)
-	Local $aResult
-
 	If $hDll = -1 Then $hDll = $__gvKernel32
 
-	$aResult = DllCall($hDll, "uint", "GetConsoleCP")
+	Local $aResult = DllCall($hDll, "uint", "GetConsoleCP")
 	If @error Then Return SetError(@error, @extended, 0)
 
 	Return $aResult[0]
@@ -1274,14 +1221,12 @@ EndFunc   ;==>_Console_GetCP
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_GetCursorInfo($hConsoleOutput = -1, $hDll = -1)
-	Local $aResult, $tConsoleCursorInfo
-
 	If $hDll = -1 Then $hDll = $__gvKernel32
 	If $hConsoleOutput = -1 Then $hConsoleOutput = _Console_GetStdHandle($STD_OUTPUT_HANDLE, $hDll)
 
-	$tConsoleCursorInfo = DllStructCreate($tagCONSOLE_CURSOR_INFO)
+	Local $tConsoleCursorInfo = DllStructCreate($tagCONSOLE_CURSOR_INFO)
 
-	$aResult = DllCall($hDll, "bool", "GetConsoleCursorInfo", _
+	Local $aResult = DllCall($hDll, "bool", "GetConsoleCursorInfo", _
 			"handle", $hConsoleOutput, _
 			"struct*", $tConsoleCursorInfo)
 	If @error Or Not $aResult[0] Then Return SetError(@error, @extended, 0)
@@ -1309,14 +1254,10 @@ EndFunc   ;==>_Console_GetCursorInfo
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_GetCursorPosition($hConsole = -1, $hDll = -1)
-	Local $tConsoleScreenBufferInfo, $aRet[2]
-
-	$tConsoleScreenBufferInfo = _Console_GetScreenBufferInfo($hConsole, $hDll)
+	Local $tConsoleScreenBufferInfo = _Console_GetScreenBufferInfo($hConsole, $hDll)
 	If @error Then Return SetError(@error, @extended, 0)
 
-	$aRet[0] = $tConsoleScreenBufferInfo.CursorPositionX
-	$aRet[1] = $tConsoleScreenBufferInfo.CursorPositionY
-
+	Local $aRet[2] = [$tConsoleScreenBufferInfo.CursorPositionX, $tConsoleScreenBufferInfo.CursorPositionY]
 	Return $aRet
 EndFunc   ;==>_Console_GetCursorPosition
 
@@ -1338,9 +1279,7 @@ EndFunc   ;==>_Console_GetCursorPosition
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_GetCursorSize($hConsole = -1, $hDll = -1)
-	Local $tConsoleCursorInfo
-
-	$tConsoleCursorInfo = _Console_GetCursorInfo($hConsole, $hDll)
+	Local $tConsoleCursorInfo = _Console_GetCursorInfo($hConsole, $hDll)
 	If @error Then Return SetError(@error, @extended, -1)
 
 	Return $tConsoleCursorInfo.Size
@@ -1364,9 +1303,7 @@ EndFunc   ;==>_Console_GetCursorSize
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_GetCursorVisible($hConsole = -1, $hDll = -1)
-	Local $tConsoleCursorInfo
-
-	$tConsoleCursorInfo = _Console_GetCursorInfo($hConsole, $hDll)
+	Local $tConsoleCursorInfo = _Console_GetCursorInfo($hConsole, $hDll)
 	If @error Then Return SetError(@error, @extended, False)
 
 	Return $tConsoleCursorInfo.Visible
@@ -1393,14 +1330,12 @@ EndFunc   ;==>_Console_GetCursorVisible
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_GetCurrentFont($hConsoleOutput = -1, $fMaximumWindow = False, $hDll = -1)
-	Local $tConsoleCurrentFont, $aResult
-
-	If $hConsoleOutput = -1 Then $hConsoleOutput = _Console_GetStdHandle($STD_OUTPUT_HANDLE, $hDll)
 	If $hDll = -1 Then $hDll = $__gvKernel32
+	If $hConsoleOutput = -1 Then $hConsoleOutput = _Console_GetStdHandle($STD_OUTPUT_HANDLE, $hDll)
 
-	$tConsoleCurrentFont = DllStructCreate($tagCONSOLE_FONT_INFO)
+	Local $tConsoleCurrentFont = DllStructCreate($tagCONSOLE_FONT_INFO)
 
-	$aResult = DllCall($hDll, "bool", "GetCurrentConsoleFont", _
+	Local $aResult = DllCall($hDll, "bool", "GetCurrentConsoleFont", _
 			"handle", $hConsoleOutput, _
 			"bool", $fMaximumWindow, _
 			"struct*", $tConsoleCurrentFont)
@@ -1429,14 +1364,12 @@ EndFunc   ;==>_Console_GetCurrentFont
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_GetCurrentFontEx($hConsoleOutput = -1, $fMaximumWindow = False, $hDll = -1)
-	Local $tConsoleCurrentFontEx, $aResult
-
-	If $hConsoleOutput = -1 Then $hConsoleOutput = _Console_GetStdHandle($STD_OUTPUT_HANDLE, $hDll)
 	If $hDll = -1 Then $hDll = $__gvKernel32
+	If $hConsoleOutput = -1 Then $hConsoleOutput = _Console_GetStdHandle($STD_OUTPUT_HANDLE, $hDll)
 
-	$tConsoleCurrentFontEx = DllStructCreate($tagCONSOLE_FONT_INFOEX)
+	Local $tConsoleCurrentFontEx = DllStructCreate($tagCONSOLE_FONT_INFOEX)
 
-	$aResult = DllCall($hDll, "bool", "GetCurrentConsoleFontEx", _
+	Local $aResult = DllCall($hDll, "bool", "GetCurrentConsoleFontEx", _
 			"handle", $hConsoleOutput, _
 			"bool", $fMaximumWindow, _
 			"struct*", $tConsoleCurrentFontEx)
@@ -1465,9 +1398,7 @@ EndFunc   ;==>_Console_GetCurrentFontEx
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_GetCurrentFontFace($hConsoleOutput = -1, $fMaximumWindow = False, $hDll = -1)
-	Local $tConsoleFontInfoEx
-
-	$tConsoleFontInfoEx = _Console_GetCurrentFontEx($hConsoleOutput, $fMaximumWindow, $hDll)
+	Local $tConsoleFontInfoEx = _Console_GetCurrentFontEx($hConsoleOutput, $fMaximumWindow, $hDll)
 	If @error Then Return SetError(@error, @extended, "")
 
 	Return $tConsoleFontInfoEx.FaceName
@@ -1499,9 +1430,7 @@ EndFunc   ;==>_Console_GetCurrentFontFace
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_GetCurrentFontFamily($hConsoleOutput = -1, $fMaximumWindow = False, $hDll = -1)
-	Local $tConsoleFontInfoEx
-
-	$tConsoleFontInfoEx = _Console_GetCurrentFontEx($hConsoleOutput, $fMaximumWindow, $hDll)
+	Local $tConsoleFontInfoEx = _Console_GetCurrentFontEx($hConsoleOutput, $fMaximumWindow, $hDll)
 	If @error Then Return SetError(@error, @extended, 0)
 
 	Return $tConsoleFontInfoEx.FontFamily
@@ -1527,9 +1456,7 @@ EndFunc   ;==>_Console_GetCurrentFontFamily
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_GetCurrentFontIndex($hConsoleOutput = -1, $fMaximumWindow = False, $hDll = -1)
-	Local $tConsoleFontInfo
-
-	$tConsoleFontInfo = _Console_GetCurrentFont($hConsoleOutput, $fMaximumWindow, $hDll)
+	Local $tConsoleFontInfo = _Console_GetCurrentFont($hConsoleOutput, $fMaximumWindow, $hDll)
 	If @error Then Return SetError(@error, @extended, 0)
 
 	Return $tConsoleFontInfo.Font
@@ -1557,14 +1484,10 @@ EndFunc   ;==>_Console_GetCurrentFontIndex
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_GetCurrentFontSize($hConsoleOutput = -1, $fMaximumWindow = False, $hDll = -1)
-	Local $tConsoleFontInfo, $aRet[2]
-
-	$tConsoleFontInfo = _Console_GetCurrentFont($hConsoleOutput, $fMaximumWindow, $hDll)
+	Local $tConsoleFontInfo = _Console_GetCurrentFont($hConsoleOutput, $fMaximumWindow, $hDll)
 	If @error Then Return SetError(@error, @extended, 0)
 
-	$aRet[0] = $tConsoleFontInfo.X
-	$aRet[1] = $tConsoleFontInfo.Y
-
+	Local $aRet[2] = [$tConsoleFontInfo.X, $tConsoleFontInfo.Y]
 	Return $aRet
 EndFunc   ;==>_Console_GetCurrentFontSize
 
@@ -1588,9 +1511,7 @@ EndFunc   ;==>_Console_GetCurrentFontSize
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_GetCurrentFontWeight($hConsoleOutput = -1, $fMaximumWindow = False, $hDll = -1)
-	Local $tConsoleFontInfoEx
-
-	$tConsoleFontInfoEx = _Console_GetCurrentFontEx($hConsoleOutput, $fMaximumWindow, $hDll)
+	Local $tConsoleFontInfoEx = _Console_GetCurrentFontEx($hConsoleOutput, $fMaximumWindow, $hDll)
 	If @error Then Return SetError(@error, @extended, 0)
 
 	Return $tConsoleFontInfoEx.FontWeight
@@ -1619,11 +1540,9 @@ EndFunc   ;==>_Console_GetCurrentFontWeight
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_GetDisplayMode($hDll = -1)
-	Local $aResult
-
 	If $hDll = -1 Then $hDll = $__gvKernel32
 
-	$aResult = DllCall($hDll, "bool", "GetConsoleDisplayMode", _
+	Local $aResult = DllCall($hDll, "bool", "GetConsoleDisplayMode", _
 			"dword", 0)
 	If @error Or (Not $aResult[0]) Then Return SetError(@error, @extended, 0)
 
@@ -1650,21 +1569,17 @@ EndFunc   ;==>_Console_GetDisplayMode
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_GetFontSize($hConsoleOutput = -1, $hDll = -1)
-	Local $tCONSOLE_FONT_INFO, $aResult, $aRet[2]
-
 	If $hDll = -1 Then $hDll = $__gvKernel32
 	If $hConsoleOutput = -1 Then $hConsoleOutput = _Console_GetStdHandle($STD_OUTPUT_HANDLE, $hDll)
 
-	$tCONSOLE_FONT_INFO = _Console_GetCurrentFont($hConsoleOutput, False, $hDll)
+	Local $tCONSOLE_FONT_INFO = _Console_GetCurrentFont($hConsoleOutput, False, $hDll)
 
-	$aResult = DllCall($hDll, "DWORD", "GetConsoleFontSize", _
+	Local $aResult = DllCall($hDll, "DWORD", "GetConsoleFontSize", _
 			"handle", $hConsoleOutput, _
 			"dword", $tCONSOLE_FONT_INFO.Font)
 	If @error Then Return SetError(@error, @extended, 0)
 
-	$aRet[0] = BitAND($aResult[0], 0xFFFF)
-	$aRet[1] = BitShift($aResult[0], 16)
-
+	Local $aRet[2] = [BitAND($aResult[0], 0xFFFF), BitShift($aResult[0], 16)]
 	Return $aRet
 EndFunc   ;==>_Console_GetFontSize
 
@@ -1684,9 +1599,7 @@ EndFunc   ;==>_Console_GetFontSize
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_GetHistoryBufferSize($hDll = -1)
-	Local $tConsoleHistoryInfo
-
-	$tConsoleHistoryInfo = _Console_GetHistoryInfo($hDll)
+	Local $tConsoleHistoryInfo = _Console_GetHistoryInfo($hDll)
 	If @error Then Return SetError(@error, @extended, -1)
 
 	Return $tConsoleHistoryInfo.HistoryBufferSize
@@ -1708,9 +1621,7 @@ EndFunc   ;==>_Console_GetHistoryBufferSize
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_GetHistoryDuplicates($hDll = -1)
-	Local $tConsoleHistoryInfo
-
-	$tConsoleHistoryInfo = _Console_GetHistoryInfo($hDll)
+	Local $tConsoleHistoryInfo = _Console_GetHistoryInfo($hDll)
 	If @error Then Return SetError(@error, @extended, False)
 
 	Return $tConsoleHistoryInfo.Flags <> $HISTORY_NO_DUP_FLAG
@@ -1732,14 +1643,12 @@ EndFunc   ;==>_Console_GetHistoryDuplicates
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_GetHistoryInfo($hDll = -1)
-	Local $tConsoleHistoryInfo, $aResult
-
 	If $hDll = -1 Then $hDll = $__gvKernel32
 
-	$tConsoleHistoryInfo = DllStructCreate($tagCONSOLE_HISTORY_INFO)
+	Local $tConsoleHistoryInfo = DllStructCreate($tagCONSOLE_HISTORY_INFO)
 	$tConsoleHistoryInfo.Size = DllStructGetSize($tConsoleHistoryInfo)
 
-	$aResult = DllCall($hDll, "bool", "GetConsoleHistoryInfo", _
+	Local $aResult = DllCall($hDll, "bool", "GetConsoleHistoryInfo", _
 			"struct*", $tConsoleHistoryInfo)
 	If @error Or Not $aResult[0] Then Return SetError(@error, @extended, 0)
 
@@ -1762,9 +1671,7 @@ EndFunc   ;==>_Console_GetHistoryInfo
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_GetHistoryNumberOfBuffers($hDll = -1)
-	Local $tConsoleHistoryInfo
-
-	$tConsoleHistoryInfo = _Console_GetHistoryInfo($hDll)
+	Local $tConsoleHistoryInfo = _Console_GetHistoryInfo($hDll)
 	If @error Then Return SetError(@error, @extended, -1)
 
 	Return $tConsoleHistoryInfo.NumberOfHistoryBuffers
@@ -1819,6 +1726,7 @@ Func _Console_GetInput($sPrompt = "", _
 	; get starting cursor position
 	Local $aPosStart = _Console_GetCursorPosition(-1, $hDll)
 	Local $aSize = _Console_GetScreenBufferSize(-1, $hDll)
+
 	While True
 		$sIn = AscW(_Console_Read(False, $fUnicode, $hDll))
 		If $sIn < 32 Then
@@ -1912,18 +1820,14 @@ EndFunc   ;==>_Console_GetInput
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_GetLargestWindowSize($hConsoleOutput = -1, $hDll = -1)
-	Local $aResult, $aRet[2]
-
-	If $hConsoleOutput = -1 Then $hConsoleOutput = _Console_GetStdHandle($STD_OUTPUT_HANDLE, $hDll)
 	If $hDll = -1 Then $hDll = $__gvKernel32
+	If $hConsoleOutput = -1 Then $hConsoleOutput = _Console_GetStdHandle($STD_OUTPUT_HANDLE, $hDll)
 
-	$aResult = DllCall($hDll, "DWORD", "GetLargestConsoleWindowSize", _
+	Local $aResult = DllCall($hDll, "DWORD", "GetLargestConsoleWindowSize", _
 			"handle", $hConsoleOutput)
 	If @error Then Return SetError(@error, @extended, 0)
 
-	$aRet[0] = BitAND($aResult[0], 0xFFFF)
-	$aRet[1] = BitShift($aResult[0], 16)
-
+	Local $aRet[2] = [BitAND($aResult[0], 0xFFFF), BitShift($aResult[0], 16)]
 	Return $aRet
 EndFunc   ;==>_Console_GetLargestWindowSize
 
@@ -1999,12 +1903,10 @@ EndFunc   ;==>_Console_GetLargestWindowSize
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_GetMode($hConsoleHandle = -1, $hDll = -1)
-	Local $aResult
-
 	If $hDll = -1 Then $hDll = $__gvKernel32
 	If $hConsoleHandle = -1 Then $hConsoleHandle = _Console_GetStdHandle($STD_INPUT_HANDLE, $hDll)
 
-	$aResult = DllCall($hDll, "bool", "GetConsoleMode", _
+	Local $aResult = DllCall($hDll, "bool", "GetConsoleMode", _
 			"handle", $hConsoleHandle, _
 			"dword*", 0)
 	If @error Or (Not $aResult[0]) Then Return SetError(@error, @extended, 0)
@@ -2030,12 +1932,10 @@ EndFunc   ;==>_Console_GetMode
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_GetNumberOfInputEvents($hConsoleInput = -1, $hDll = -1)
-	Local $aResult
-
-	If $hConsoleInput = -1 Then $hConsoleInput = _Console_GetStdHandle($STD_INPUT_HANDLE, $hDll)
 	If $hDll = -1 Then $hDll = $__gvKernel32
+	If $hConsoleInput = -1 Then $hConsoleInput = _Console_GetStdHandle($STD_INPUT_HANDLE, $hDll)
 
-	$aResult = DllCall($hDll, "bool", "GetNumberOfConsoleInputEvents", _
+	Local $aResult = DllCall($hDll, "bool", "GetNumberOfConsoleInputEvents", _
 			"handle", $hConsoleInput, _
 			"dword*", 0)
 	If @error Or (Not $aResult[0]) Then Return SetError(@error, @extended, 0)
@@ -2059,11 +1959,9 @@ EndFunc   ;==>_Console_GetNumberOfInputEvents
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_GetNumberOfMouseButtons($hDll = -1)
-	Local $aResult
-
 	If $hDll = -1 Then $hDll = $__gvKernel32
 
-	$aResult = DllCall($hDll, "bool", "GetNumberOfConsoleMouseButtons", _
+	Local $aResult = DllCall($hDll, "bool", "GetNumberOfConsoleMouseButtons", _
 			"dword*", 0)
 	If @error Or (Not $aResult[0]) Then Return SetError(@error, @extended, 0)
 
@@ -2088,24 +1986,14 @@ EndFunc   ;==>_Console_GetNumberOfMouseButtons
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_GetOriginalTitle($fUnicode = Default, $hDll = -1)
-	Local $tConsoleTitle, $aResult
-
 	If $fUnicode = Default Then $fUnicode = $__gfUnicode
 	If $hDll = -1 Then $hDll = $__gvKernel32
 
-	If $fUnicode Then
-		$tConsoleTitle = DllStructCreate("wchar buffer[128]")
+	Local $tConsoleTitle = DllStructCreate(($fUnicode ? "w" : "") & "char buffer[128]")
 
-		$aResult = DllCall($hDll, "dword", "GetConsoleOriginalTitleW", _
-				"struct*", $tConsoleTitle, _
-				"dword", DllStructGetSize($tConsoleTitle))
-	Else
-		$tConsoleTitle = DllStructCreate("char buffer[128]")
-
-		$aResult = DllCall($hDll, "dword", "GetConsoleOriginalTitleA", _
-				"struct*", $tConsoleTitle, _
-				"dword", DllStructGetSize($tConsoleTitle))
-	EndIf
+	Local $aResult = DllCall($hDll, "dword", "GetConsoleOriginalTitle" & ($fUnicode ? "A" : "W"), _
+			"struct*", $tConsoleTitle, _
+			"dword", DllStructGetSize($tConsoleTitle))
 	If @error Or Not $aResult[0] Then Return SetError(@error, @extended, "")
 
 	Return $tConsoleTitle.buffer
@@ -2129,11 +2017,9 @@ EndFunc   ;==>_Console_GetOriginalTitle
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_GetOutputCP($hDll = -1)
-	Local $aResult
-
 	If $hDll = -1 Then $hDll = $__gvKernel32
 
-	$aResult = DllCall($hDll, "uint", "GetConsoleOutputCP")
+	Local $aResult = DllCall($hDll, "uint", "GetConsoleOutputCP")
 	If @error Then Return SetError(@error, @extended, 0)
 
 	Return $aResult[0]
@@ -2155,14 +2041,12 @@ EndFunc   ;==>_Console_GetOutputCP
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_GetProcessList($hDll = -1)
-	Local $iProcessCount, $tProcessList, $aResult, $aRet[1], $i
-
 	If $hDll = -1 Then $hDll = $__gvKernel32
 
-	$iProcessCount = 1
-	$tProcessList = DllStructCreate("dword list[" & $iProcessCount & "]")
+	Local $iProcessCount = 1
+	Local $tProcessList = DllStructCreate("dword list[" & $iProcessCount & "]")
 
-	$aResult = DllCall($hDll, "dword", "GetConsoleProcessList", _
+	Local $aResult = DllCall($hDll, "dword", "GetConsoleProcessList", _
 			"struct*", $tProcessList, _
 			"dword", $iProcessCount)
 	If @error Or ($aResult[0] < 1) Then Return SetError(@error, @extended, 0)
@@ -2178,7 +2062,7 @@ Func _Console_GetProcessList($hDll = -1)
 		If @error Or ($aResult[0] < 1) Then Return SetError(@error, @extended, 0)
 	EndIf
 
-	ReDim $aRet[$aResult[0]]
+	Local $aRet[$aResult[0]]
 	For $i = 0 To $aResult[0] - 1
 		$aRet[$i] = DllStructGetData($tProcessList, 1, $i)
 	Next
@@ -2220,9 +2104,7 @@ EndFunc   ;==>_Console_GetProcessList
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_GetScreenBufferAttributes($hConsoleOutput = -1, $hDll = -1)
-	Local $tConsoleScreenBufferInfo
-
-	$tConsoleScreenBufferInfo = _Console_GetScreenBufferInfo($hConsoleOutput, $hDll)
+	Local $tConsoleScreenBufferInfo = _Console_GetScreenBufferInfo($hConsoleOutput, $hDll)
 	If @error Then Return SetError(@error, @extended, 0)
 
 	Return $tConsoleScreenBufferInfo.Attributes
@@ -2246,11 +2128,10 @@ EndFunc   ;==>_Console_GetScreenBufferAttributes
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_GetScreenBufferColorTable($hConsoleOutput = -1, $hDll = -1)
-	Local $tConsoleScreenBufferInfoEx, $aRet[16]
-
-	$tConsoleScreenBufferInfoEx = _Console_GetScreenBufferInfoEx($hConsoleOutput, $hDll)
+	Local $tConsoleScreenBufferInfoEx = _Console_GetScreenBufferInfoEx($hConsoleOutput, $hDll)
 	If @error Then Return SetError(@error, @extended, 0)
 
+	Local $aRet[16]
 	For $i = 0 To 15
 		$aRet[$i] = DllStructGetData($tConsoleScreenBufferInfoEx, "ColorTable", $i + 1)
 	Next
@@ -2276,9 +2157,7 @@ EndFunc   ;==>_Console_GetScreenBufferColorTable
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_GetScreenBufferFullscreen($hConsoleOutput = -1, $hDll = -1)
-	Local $tConsoleScreenBufferInfoEx
-
-	$tConsoleScreenBufferInfoEx = _Console_GetScreenBufferInfoEx($hConsoleOutput, $hDll)
+	Local $tConsoleScreenBufferInfoEx = _Console_GetScreenBufferInfoEx($hConsoleOutput, $hDll)
 	If @error Then Return SetError(@error, @extended, False)
 
 	Return $tConsoleScreenBufferInfoEx.FullscreenSupported
@@ -2303,14 +2182,12 @@ EndFunc   ;==>_Console_GetScreenBufferFullscreen
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_GetScreenBufferInfo($hConsoleOutput = -1, $hDll = -1)
-	Local $tConsoleScreenBufferInfo, $aResult
-
 	If $hDll = -1 Then $hDll = $__gvKernel32
 	If $hConsoleOutput = -1 Then $hConsoleOutput = _Console_GetStdHandle($STD_OUTPUT_HANDLE, $hDll)
 
-	$tConsoleScreenBufferInfo = DllStructCreate($tagCONSOLE_SCREEN_BUFFER_INFO)
+	Local $tConsoleScreenBufferInfo = DllStructCreate($tagCONSOLE_SCREEN_BUFFER_INFO)
 
-	$aResult = DllCall($hDll, "bool", "GetConsoleScreenBufferInfo", _
+	Local $aResult = DllCall($hDll, "bool", "GetConsoleScreenBufferInfo", _
 			"handle", $hConsoleOutput, _
 			"struct*", $tConsoleScreenBufferInfo)
 	If @error Or (Not $aResult[0]) Then Return SetError(@error, @extended, 0)
@@ -2337,15 +2214,13 @@ EndFunc   ;==>_Console_GetScreenBufferInfo
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_GetScreenBufferInfoEx($hConsoleOutput = -1, $hDll = -1)
-	Local $tConsoleScreenBufferInfoEx, $aResult
-
 	If $hDll = -1 Then $hDll = $__gvKernel32
 	If $hConsoleOutput = -1 Then $hConsoleOutput = _Console_GetStdHandle($STD_OUTPUT_HANDLE, $hDll)
 
-	$tConsoleScreenBufferInfoEx = DllStructCreate($tagCONSOLE_SCREEN_BUFFER_INFOEX)
+	Local $tConsoleScreenBufferInfoEx = DllStructCreate($tagCONSOLE_SCREEN_BUFFER_INFOEX)
 	$tConsoleScreenBufferInfoEx.Size = DllStructGetSize($tConsoleScreenBufferInfoEx)
 
-	$aResult = DllCall($hDll, "bool", "GetConsoleScreenBufferInfoEx", _
+	Local $aResult = DllCall($hDll, "bool", "GetConsoleScreenBufferInfoEx", _
 			"handle", $hConsoleOutput, _
 			"struct*", $tConsoleScreenBufferInfoEx)
 	If @error Or (Not $aResult[0]) Then Return SetError(@error, @extended, 0)
@@ -2373,14 +2248,10 @@ EndFunc   ;==>_Console_GetScreenBufferInfoEx
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_GetScreenBufferMaxSize($hConsoleOutput = -1, $hDll = -1)
-	Local $tConsoleScreenBufferInfo, $aRet[2]
-
-	$tConsoleScreenBufferInfo = _Console_GetScreenBufferInfo($hConsoleOutput, $hDll)
+	Local $tConsoleScreenBufferInfo = _Console_GetScreenBufferInfo($hConsoleOutput, $hDll)
 	If @error Then Return SetError(@error, @extended, 0)
 
-	$aRet[0] = $tConsoleScreenBufferInfo.MaximumWindowSizeX
-	$aRet[1] = $tConsoleScreenBufferInfo.MaximumWindowSizeY
-
+	Local $aRet[2] = [$tConsoleScreenBufferInfo.MaximumWindowSizeX, $tConsoleScreenBufferInfo.MaximumWindowSizeY]
 	Return $aRet
 EndFunc   ;==>_Console_GetScreenBufferMaxSize
 
@@ -2402,9 +2273,7 @@ EndFunc   ;==>_Console_GetScreenBufferMaxSize
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_GetScreenBufferPopupAttributes($hConsoleOutput = -1, $hDll = -1)
-	Local $tConsoleScreenBufferInfoEx
-
-	$tConsoleScreenBufferInfoEx = _Console_GetScreenBufferInfoEx($hConsoleOutput, $hDll)
+	Local $tConsoleScreenBufferInfoEx = _Console_GetScreenBufferInfoEx($hConsoleOutput, $hDll)
 	If @error Then Return SetError(@error, @extended, 0)
 
 	Return $tConsoleScreenBufferInfoEx.PopupAttributes
@@ -2432,16 +2301,11 @@ EndFunc   ;==>_Console_GetScreenBufferPopupAttributes
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_GetScreenBufferPos($hConsoleOutput = -1, $hDll = -1)
-	Local $tConsoleScreenBufferInfo, $aRet[4]
-
-	$tConsoleScreenBufferInfo = _Console_GetScreenBufferInfo($hConsoleOutput, $hDll)
+	Local $tConsoleScreenBufferInfo = _Console_GetScreenBufferInfo($hConsoleOutput, $hDll)
 	If @error Then Return SetError(@error, @extended, 0)
 
-	$aRet[0] = $tConsoleScreenBufferInfo.Left
-	$aRet[1] = $tConsoleScreenBufferInfo.Top
-	$aRet[2] = $tConsoleScreenBufferInfo.Right - $aRet[0]
-	$aRet[3] = $tConsoleScreenBufferInfo.Bottom - $aRet[1]
-
+	Local $aRet[4] = [$tConsoleScreenBufferInfo.Left, $tConsoleScreenBufferInfo.Top, _
+			$tConsoleScreenBufferInfo.Right - $aRet[0], $tConsoleScreenBufferInfo.Bottom - $aRet[1]]
 	Return $aRet
 EndFunc   ;==>_Console_GetScreenBufferPos
 
@@ -2465,14 +2329,10 @@ EndFunc   ;==>_Console_GetScreenBufferPos
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_GetScreenBufferSize($hConsoleOutput = -1, $hDll = -1)
-	Local $tConsoleScreenBufferInfo, $aRet[2]
-
-	$tConsoleScreenBufferInfo = _Console_GetScreenBufferInfo($hConsoleOutput, $hDll)
+	Local $tConsoleScreenBufferInfo = _Console_GetScreenBufferInfo($hConsoleOutput, $hDll)
 	If @error Then Return SetError(@error, @extended, 0)
 
-	$aRet[0] = $tConsoleScreenBufferInfo.SizeX
-	$aRet[1] = $tConsoleScreenBufferInfo.SizeY
-
+	Local $aRet[2] = [$tConsoleScreenBufferInfo.SizeX, $tConsoleScreenBufferInfo.SizeY]
 	Return $aRet
 EndFunc   ;==>_Console_GetScreenBufferSize
 
@@ -2494,14 +2354,10 @@ EndFunc   ;==>_Console_GetScreenBufferSize
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_GetSelectionAnchor($hDll = -1)
-	Local $tConsoleSelectionInfo, $aRet[2]
-
-	$tConsoleSelectionInfo = _Console_GetSelectionInfo($hDll)
+	Local $tConsoleSelectionInfo = _Console_GetSelectionInfo($hDll)
 	If @error Then Return SetError(@error, @extended, 0)
 
-	$aRet[0] = $tConsoleSelectionInfo.X
-	$aRet[1] = $tConsoleSelectionInfo.Y
-
+	Local $aRet[2] = [$tConsoleSelectionInfo.X, $tConsoleSelectionInfo.Y]
 	Return $aRet
 EndFunc   ;==>_Console_GetSelectionAnchor
 
@@ -2526,9 +2382,7 @@ EndFunc   ;==>_Console_GetSelectionAnchor
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_GetSelectionFlags($hDll = -1)
-	Local $tConsoleSelectionInfo
-
-	$tConsoleSelectionInfo = _Console_GetSelectionInfo($hDll)
+	Local $tConsoleSelectionInfo = _Console_GetSelectionInfo($hDll)
 	If @error Then Return SetError(@error, @extended, 0)
 
 	Return $tConsoleSelectionInfo.Flags
@@ -2550,13 +2404,11 @@ EndFunc   ;==>_Console_GetSelectionFlags
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_GetSelectionInfo($hDll = -1)
-	Local $tConsoleSelectionInfo, $aResult
-
 	If $hDll = -1 Then $hDll = $__gvKernel32
 
-	$tConsoleSelectionInfo = DllStructCreate($tagCONSOLE_SELECTION_INFO)
+	Local $tConsoleSelectionInfo = DllStructCreate($tagCONSOLE_SELECTION_INFO)
 
-	$aResult = DllCall($hDll, "bool", "GetConsoleSelectionInfo", _
+	Local $aResult = DllCall($hDll, "bool", "GetConsoleSelectionInfo", _
 			"struct*", $tConsoleSelectionInfo)
 	If @error Or (Not $aResult[0]) Then Return SetError(@error, @extended, 0)
 
@@ -2583,16 +2435,11 @@ EndFunc   ;==>_Console_GetSelectionInfo
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_GetSelectionRect($hDll = -1)
-	Local $tConsoleSelectionInfo, $aRet[4]
-
-	$tConsoleSelectionInfo = _Console_GetSelectionInfo($hDll)
+	Local $tConsoleSelectionInfo = _Console_GetSelectionInfo($hDll)
 	If @error Then Return SetError(@error, @extended, 0)
 
-	$aRet[0] = $tConsoleSelectionInfo.Left
-	$aRet[1] = $tConsoleSelectionInfo.Top
-	$aRet[2] = $tConsoleSelectionInfo.Right - $aRet[0]
-	$aRet[3] = $tConsoleSelectionInfo.Bottom - $aRet[1]
-
+	Local $aRet[4] = [$tConsoleSelectionInfo.Left, $tConsoleSelectionInfo.Top, _
+			$tConsoleSelectionInfo.Right - $aRet[0], $tConsoleSelectionInfo.Bottom - $aRet[1]]
 	Return $aRet
 EndFunc   ;==>_Console_GetSelectionRect
 
@@ -2612,12 +2459,10 @@ EndFunc   ;==>_Console_GetSelectionRect
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_GetSelectionRectEx($hDll = -1)
-	Local $tConsoleSelectionInfo, $tRect
-
-	$tConsoleSelectionInfo = _Console_GetSelectionInfo($hDll)
+	Local $tConsoleSelectionInfo = _Console_GetSelectionInfo($hDll)
 	If @error Then Return SetError(@error, @extended, 0)
 
-	$tRect = DllStructCreate($tagSMALL_RECT)
+	Local $tRect = DllStructCreate($tagSMALL_RECT)
 	$tRect.Left = $tConsoleSelectionInfo.Left
 	$tRect.Top = $tConsoleSelectionInfo.Top
 	$tRect.Right = $tConsoleSelectionInfo.Right
@@ -2653,11 +2498,9 @@ EndFunc   ;==>_Console_GetSelectionRectEx
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_GetStdHandle($nStdHandle = -11, $hDll = -1)
-	Local $aResult
-
 	If $hDll = -1 Then $hDll = $__gvKernel32
 
-	$aResult = DllCall($hDll, "handle", "GetStdHandle", _
+	Local $aResult = DllCall($hDll, "handle", "GetStdHandle", _
 			"dword", $nStdHandle)
 	If @error Then Return SetError(@error, @extended, 0)
 
@@ -2681,30 +2524,19 @@ EndFunc   ;==>_Console_GetStdHandle
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_GetTitle($fUnicode = Default, $hDll = -1)
-	Local $tConsoleTitle, $aResult
-
 	If $fUnicode = Default Then $fUnicode = $__gfUnicode
 	If $hDll = -1 Then $hDll = $__gvKernel32
 
-	If $fUnicode Then
-		$aResult = DllCall($hDll, "dword", "GetConsoleTitleW", _
-				"ptr", 0, _
-				"dword", 0)
-		$tConsoleTitle = DllStructCreate("wchar buffer[" & $aResult[0] & "]")
+	Local $aResult = DllCall($hDll, "dword", "GetConsoleTitle" & ($fUnicode ? "A" : "W"), _
+			"ptr", 0, _
+			"dword", 0)
+	If @error Then Return SetError(@error, @extended, "")
 
-		$aResult = DllCall($hDll, "dword", "GetConsoleTitleW", _
-				"struct*", $tConsoleTitle, _
-				"dword", $aResult[0])
-	Else
-		$aResult = DllCall($hDll, "dword", "GetConsoleTitleA", _
-				"ptr", 0, _
-				"dword", 0)
-		$tConsoleTitle = DllStructCreate("char buffer[" & $aResult[0] & "]")
+	Local $tConsoleTitle = DllStructCreate(($fUnicode ? "w" : "") & "char buffer[" & $aResult[0] & "]")
 
-		$aResult = DllCall($hDll, "dword", "GetConsoleTitleA", _
-				"struct*", $tConsoleTitle, _
-				"dword", $aResult[0])
-	EndIf
+	$aResult = DllCall($hDll, "dword", "GetConsoleTitle" & ($fUnicode ? "A" : "W"), _
+			"struct*", $tConsoleTitle, _
+			"dword", $aResult[0])
 	If @error Then Return SetError(@error, @extended, "")
 
 	Return $tConsoleTitle.buffer
@@ -2726,11 +2558,9 @@ EndFunc   ;==>_Console_GetTitle
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_GetWindow($hDll = -1)
-	Local $aResult
-
 	If $hDll = -1 Then $hDll = $__gvKernel32
 
-	$aResult = DllCall($hDll, "hwnd", "GetConsoleWindow")
+	Local $aResult = DllCall($hDll, "hwnd", "GetConsoleWindow")
 	If @error Then Return SetError(@error, @extended, 0)
 
 	Return $aResult[0]
@@ -2756,10 +2586,40 @@ EndFunc   ;==>_Console_GetWindow
 ; Link ..........:
 ; Example .......: No
 ; ===============================================================================================================================
-Func _Console_Pause($sMsg = Default, $iTime = -1, $fUnicode = Default, $hDll = -1)
-	Local $ret
-
+Func _Console_Pause($hConsoleInput = -1, $iTime = -1, $fUnicode = Default, $hDll = -1)
 	If $fUnicode = Default Then $fUnicode = $__gfUnicode
+	If $hDll = -1 Then $hDll = $__gvKernel32
+	If $hConsoleInput = -1 Then $hConsoleInput = _Console_GetStdHandle($STD_INPUT_HANDLE, $hDll)
+
+	; wait for input
+	_Console_FlushInputBuffer($hConsoleInput, $hDll)
+	Local $ret = _WinAPI_WaitForSingleObject($hConsoleInput, $iTime)
+	If $ret = 0x0102 Then Return SetError(1, 0, "")
+
+	; read input
+	; get console mode
+	Local $modeOrig = _Console_GetMode($hConsoleInput, $hDll)
+
+	; remove LINE_INPUT
+	_Console_SetMode($hConsoleInput, BitAND($modeOrig, BitNOT($ENABLE_LINE_INPUT)), $hDll)
+	Local $charOut = _Console_ReadConsole($hConsoleInput, 1, $fUnicode, $hDll)
+
+	; flush any remaining input records
+	_Console_FlushInputBuffer($hConsoleInput, $hDll)
+
+	; restore mode
+	_Console_SetMode($hConsoleInput, $modeOrig, $hDll)
+
+	Return $charOut
+EndFunc   ;==>_Console_Pause
+
+
+; TODO: Doc
+Func _Console_PauseMessage($hConsoleInput = -1, $hConsoleOutput = -1, $sMsg = Default, $iTime = -1, $fUnicode = Default, $hDll = -1)
+	If $fUnicode = Default Then $fUnicode = $__gfUnicode
+	If $hDll = -1 Then $hDll = $__gvKernel32
+	If $hConsoleInput = -1 Then $hConsoleInput = _Console_GetStdHandle($STD_INPUT_HANDLE, $hDll)
+	If $hConsoleOutput = -1 Then $hConsoleOutput = _Console_GetStdHandle($STD_OUTPUT_HANDLE, $hDll)
 
 	If $sMsg = Default Then
 		_Console_Write("Press any key to continue . . . ", $fUnicode, $hDll)
@@ -2767,32 +2627,16 @@ Func _Console_Pause($sMsg = Default, $iTime = -1, $fUnicode = Default, $hDll = -
 		_Console_Write($sMsg, $fUnicode, $hDll)
 	EndIf
 
-	Local $hConsoleInput = _Console_GetStdHandle($STD_INPUT_HANDLE, $hDll)
-
-	; wait for input
-	_Console_FlushInputBuffer($hConsoleInput, $hDll)
-	$ret = _WinAPI_WaitForSingleObject($hConsoleInput, $iTime)
-	If $ret = 0x0102 Then Return SetExtended(1, "")
-
-	; read input
-	; get console mode
-	Local $modeOrig = _Console_GetMode($hConsoleInput, $hDll)
-	; remove LINE_INPUT
-	_Console_SetMode($hConsoleInput, BitAND($modeOrig, BitNOT($ENABLE_LINE_INPUT)), $hDll)
-	Local $charOut = _Console_ReadConsole($hConsoleInput, 1, $fUnicode, $hDll)
-	; flush any remaining input records
-	_Console_FlushInputBuffer($hConsoleInput, $hDll)
-	; restore mode
-	_Console_SetMode($hConsoleInput, $modeOrig, $hDll)
-
-	Return $charOut
-EndFunc   ;==>_Console_Pause
+	Return _Console_Pause($hConsoleInput, $iTime, $fUnicode, $hDll)
+EndFunc
 
 ; #FUNCTION# ====================================================================================================================
 ; Name...........: _Console_Read
 ; Description ...: Reads data from the current console input buffer and removes it from the buffer.
 ; Syntax.........: _Console_Read( [ $fEcho [, $fUnicode [, $hDll ]]] )
-; Parameters ....: $fEcho               - If 'True' then input is read and echoed until a carriage return. If 'False' then input
+; Parameters ....: $hConsoleInput       - A handle to the console input buffer. The handle must have the GENERIC_READ access
+;                                         right.
+;                  $fEcho               - If 'True' then input is read and echoed until a carriage return. If 'False' then input
 ;                                         is read, NOT echoed, and returned one character at a time.
 ;                  $fUnicode            - If 'True' then the unicode version will be used. If 'False' then ANSI is used.
 ;                  $hDll                - A handle to a dll to use. This prevents constant opening of the dll which could slow it
@@ -2806,18 +2650,23 @@ EndFunc   ;==>_Console_Pause
 ; Link ..........: http://msdn.microsoft.com/en-us/library/ms684958.aspx
 ; Example .......: No
 ; ===============================================================================================================================
-Func _Console_Read($fEcho = True, $fUnicode = Default, $hDll = -1)
-	Local $sRet = "", $sTemp, $hConsoleInput = _Console_GetStdHandle($STD_INPUT_HANDLE, $hDll)
+Func _Console_Read($hConsoleInput = -1, $fEcho = True, $fUnicode = Default, $hDll = -1)
+	Local $sRet
 
 	If $fUnicode = Default Then $fUnicode = $__gfUnicode
+	If $hDll = -1 Then $hDll = $__gvKernel32
+	If $hConsoleInput = -1 Then $hConsoleInput = _Console_GetStdHandle($STD_INPUT_HANDLE, $hDll)
 
 	Local $modeOrig = _Console_GetMode($hConsoleInput, $hDll)
 
 	If $fEcho Then
+		Local $sTemp
+
 		; read input, echo each character, until carriage return
 		; make sure LINE_INPUT is ON
 		_Console_SetMode($hConsoleInput, BitOR($modeOrig, $ENABLE_LINE_INPUT), $hDll)
 
+		$sRet = ""
 		While 1
 			$sTemp = _Console_ReadConsole($hConsoleInput, 1, $fUnicode, $hDll)
 			If $sTemp = @CR Then
@@ -2860,32 +2709,18 @@ EndFunc   ;==>_Console_Read
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_ReadConsole($hConsoleInput, $nNumberOfCharsToRead, $fUnicode = Default, $hDll = -1)
-	Local $tBuffer, $aResult
-
-	If $hConsoleInput = -1 Then $hConsoleInput = _Console_GetStdHandle($STD_INPUT_HANDLE, $hDll)
 	If $fUnicode = Default Then $fUnicode = $__gfUnicode
 	If $hDll = -1 Then $hDll = $__gvKernel32
+	If $hConsoleInput = -1 Then $hConsoleInput = _Console_GetStdHandle($STD_INPUT_HANDLE, $hDll)
 
-	If $fUnicode Then
-		$tBuffer = DllStructCreate("wchar buffer[" & $nNumberOfCharsToRead & "]")
+	Local $tBuffer = DllStructCreate(($fUnicode ? "w" : "") & "char buffer[" & $nNumberOfCharsToRead & "]")
 
-		$aResult = DllCall($hDll, "BOOL", "ReadConsoleW", _
-				"handle", $hConsoleInput, _
-				"struct*", $tBuffer, _
-				"dword", $nNumberOfCharsToRead, _
-				"dword*", 0, _
-				"ptr", 0)
-	Else
-		$tBuffer = DllStructCreate("char buffer[" & $nNumberOfCharsToRead & "]")
-
-		$aResult = DllCall($hDll, "BOOL", "ReadConsoleA", _
-				"handle", $hConsoleInput, _
-				"struct*", $tBuffer, _
-				"dword", $nNumberOfCharsToRead, _
-				"dword*", 0, _
-				"ptr", 0)
-	EndIf
-
+	Local $aResult = DllCall($hDll, "BOOL", "ReadConsole" & ($fUnicode ? "A" : "W"), _
+			"handle", $hConsoleInput, _
+			"struct*", $tBuffer, _
+			"dword", $nNumberOfCharsToRead, _
+			"dword*", 0, _
+			"ptr", 0)
 	If @error Or (Not $aResult[0]) Then Return SetError(@error, @extended, "")
 
 	Return SetExtended($aResult[4], $tBuffer.buffer)
@@ -2894,42 +2729,28 @@ EndFunc   ;==>_Console_ReadConsole
 #region WIP
 
 Func _Console_ReadInputRecord($hConsoleInput = -1, $fUnicode = Default, $hDll = -1)
-	Local $tInputRecord, $iResult
-
 	If $hDll = -1 Then $hDll = $__gvKernel32
-	If $hConsoleInput = -1 Then $hConsoleInput = _Console_GetStdHandle($STD_INPUT_HANDLE, $hDll)
 	If $fUnicode = Default Then $fUnicode = $__gfUnicode
+	If $hConsoleInput = -1 Then $hConsoleInput = _Console_GetStdHandle($STD_INPUT_HANDLE, $hDll)
 
-	$tInputRecord = DllStructCreate($tagINPUT_RECORD)
+	Local $tInputRecord = DllStructCreate($tagINPUT_RECORD)
 
-	$iResult = _Console_ReadInput($hConsoleInput, DllStructGetPtr($tInputRecord), 1, $fUnicode, $hDll)
-	If $iResult = 0 Then Return SetError(@error, @extended, 0)
+	If _Console_ReadInput($hConsoleInput, DllStructGetPtr($tInputRecord), 1, $fUnicode, $hDll) = 0 Then Return SetError(@error, @extended, 0)
 
 	Return $tInputRecord
 EndFunc   ;==>_Console_ReadInputRecord
 
 ; Returns No. events read, zero = fail
 Func _Console_ReadInput($hConsoleInput, $pBuffer, $iLength, $fUnicode = Default, $hDll = -1)
-	Local $aResult
-
 	If $fUnicode = Default Then $fUnicode = $__gfUnicode
 	If $hDll = -1 Then $hDll = $__gvKernel32
 	If $hConsoleInput = -1 Then $hConsoleInput = _Console_GetStdHandle($STD_INPUT_HANDLE, $hDll)
 
-	If $fUnicode Then
-		$aResult = DllCall($hDll, "BOOL", "ReadConsoleInputW", _
-				"handle", $hConsoleInput, _
-				"ptr", $pBuffer, _
-				"int", $iLength, _
-				"int*", 0)
-	Else
-		$aResult = DllCall($hDll, "BOOL", "ReadConsoleInputA", _
-				"handle", $hConsoleInput, _
-				"ptr", $pBuffer, _
-				"int", $iLength, _
-				"int*", 0)
-	EndIf
-
+	Local $aResult = DllCall($hDll, "BOOL", "ReadConsoleInput" & ($fUnicode ? "A" : "W"), _
+			"handle", $hConsoleInput, _
+			"ptr", $pBuffer, _
+			"int", $iLength, _
+			"int*", 0)
 	If @error Or (Not $aResult[0]) Then Return SetError(@error, @extended, 0)
 
 	Return $aResult[4]
@@ -2962,33 +2783,18 @@ EndFunc   ;==>_Console_ReadInput
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_ReadOutputCharacter($hConsoleOutput, $nNumberOfCharsToRead, $iX, $iY, $fUnicode = Default, $hDll = -1)
-	Local $tCOORD, $tBuffer, $aResult
-
 	If $fUnicode = Default Then $fUnicode = $__gfUnicode
 	If $hDll = -1 Then $hDll = $__gvKernel32
 	If $hConsoleOutput = -1 Then $hConsoleOutput = _Console_GetStdHandle($STD_OUTPUT_HANDLE, $hDll)
 
-	$tCOORD = BitShift($iY, -16) + $iX
+	Local $tBuffer = DllStructCreate(($fUnicode ? "w" : "") & "char buffer[" & $nNumberOfCharsToRead & "]")
 
-	If $fUnicode Then
-		$tBuffer = DllStructCreate("wchar buffer[" & ($nNumberOfCharsToRead + 1) & "]")
-
-		$aResult = DllCall($hDll, "bool", "ReadConsoleOutputCharacterW", _
-				"handle", $hConsoleOutput, _
-				"struct*", $tBuffer, _
-				"dword", $nNumberOfCharsToRead, _
-				"dword", $tCOORD, _
-				"dword*", 0)
-	Else
-		$tBuffer = DllStructCreate("char buffer[" & ($nNumberOfCharsToRead + 1) & "]")
-
-		$aResult = DllCall($hDll, "bool", "ReadConsoleOutputCharacterA", _
-				"handle", $hConsoleOutput, _
-				"struct*", $tBuffer, _
-				"dword", $nNumberOfCharsToRead, _
-				"dword", $tCOORD, _
-				"dword*", 0)
-	EndIf
+	Local $aResult = DllCall($hDll, "bool", "ReadConsoleOutputCharacterW", _
+			"handle", $hConsoleOutput, _
+			"struct*", $tBuffer, _
+			"dword", $nNumberOfCharsToRead, _
+			"dword", BitShift($iY, -16) + $iX, _
+			"dword*", 0)
 	If @error Or (Not $aResult[0]) Then Return SetError(@error, @extended, "")
 
 	Return SetExtended($aResult[4], $tBuffer.buffer)
@@ -3016,11 +2822,8 @@ Func _Console_Run($sCmd, $fWait = True, $fNew = False, $iShow = Default)
 	Local $iFlag = 0x10
 	If $fNew Then $iFlag = 0x10000
 
-	If $fWait Then
-		Return RunWait($sCmd, "", $iShow, $iFlag)
-	Else
-		Return Run($sCmd, "", $iShow, $iFlag)
-	EndIf
+	If $fWait Then Return RunWait($sCmd, "", $iShow, $iFlag)
+	Return Run($sCmd, "", $iShow, $iFlag)
 EndFunc   ;==>_Console_Run
 
 ; #FUNCTION# ====================================================================================================================
@@ -3078,20 +2881,18 @@ Func _Console_ScrollScreenBuffer($hConsoleOutput, _
 		$iToX, $iToY, _
 		$sFillChar = " ", $iFillAttributes = Default, _
 		$fUnicode = Default, $hDll = -1)
-
-	Local $tScrollRect, $tFill, $fResult
-
 	If $fUnicode = Default Then $fUnicode = $__gfUnicode
 	If $hDll = -1 Then $hDll = $__gvKernel32
 	If $hConsoleOutput = -1 Then $hConsoleOutput = _Console_GetStdHandle($STD_OUTPUT_HANDLE, $hDll)
 	If $iFillAttributes = Default Then $iFillAttributes = _Console_GetScreenBufferAttributes($hConsoleOutput, $hDll)
 
-	$tScrollRect = DllStructCreate($tagSMALL_RECT)
+	Local $tScrollRect = DllStructCreate($tagSMALL_RECT)
 	$tScrollRect.Left = $iFromX
 	$tScrollRect.Top = $iFromY
 	$tScrollRect.Right = $iFromX + $iFromWidth
 	$tScrollRect.Bottom = $iFromY + $iFromHeight
 
+	Local $tFill
 	If $fUnicode Then
 		$tFill = DllStructCreate($tagCHAR_INFO_W)
 	Else
@@ -3100,14 +2901,12 @@ Func _Console_ScrollScreenBuffer($hConsoleOutput, _
 	$tFill.Char = $sFillChar
 	$tFill.Attributes = $iFillAttributes
 
-	$fResult = _Console_ScrollScreenBufferEx($hConsoleOutput, _
+	Return _Console_ScrollScreenBufferEx($hConsoleOutput, _
 			DllStructGetPtr($tScrollRect), _
 			$iToX, $iToY, _
 			DllStructGetPtr($tFill), _
 			0, _
 			$fUnicode, $hDll)
-
-	Return $fResult
 EndFunc   ;==>_Console_ScrollScreenBuffer
 
 ; #FUNCTION# ====================================================================================================================
@@ -3148,36 +2947,23 @@ Func _Console_ScrollScreenBufferEx($hConsoleOutput, _
 		$pFill, _
 		$pClipRect = 0, _
 		$fUnicode = Default, $hDll = -1)
-
-	Local $iDestinationOrigin, $aResult
-
 	If $fUnicode = Default Then $fUnicode = $__gfUnicode
 	If $hDll = -1 Then $hDll = $__gvKernel32
 	If $hConsoleOutput = -1 Then $hConsoleOutput = _Console_GetStdHandle($STD_OUTPUT_HANDLE, $hDll)
 
 	If IsDllSTruct($pScrollRect) Then $pScrollRect = DllStructGetPtr($pScrollRect)
-	$iDestinationOrigin = BitShift($iOriginY, -16) + $iOriginX
 	If IsDllSTruct($pFill) Then $pFill = DllStructGetPtr($pFill)
 	If $pClipRect <> 0 And IsDllSTruct($pClipRect) Then $pClipRect = DllStructGetPtr($pClipRect)
 
-	If $fUnicode Then
-		$aResult = DllCall($hDll, "bool", "ScrollConsoleScreenBufferW", _
-				"handle", $hConsoleOutput, _
-				"ptr", $pScrollRect, _
-				"ptr", $pClipRect, _
-				"dword", $iDestinationOrigin, _
-				"ptr", $pFill)
-	Else
-		$aResult = DllCall($hDll, "bool", "ScrollConsoleScreenBufferA", _
-				"handle", $hConsoleOutput, _
-				"ptr", $pScrollRect, _
-				"ptr", $pClipRect, _
-				"dword", $iDestinationOrigin, _
-				"ptr", $pFill)
-	EndIf
-	If @error Or (Not $aResult[0]) Then Return SetError(@error, @extended, False)
+	Local $aResult = DllCall($hDll, "bool", "ScrollConsoleScreenBuffer" & ($fUnicode ? "A" : "W"), _
+			"handle", $hConsoleOutput, _
+			"ptr", $pScrollRect, _
+			"ptr", $pClipRect, _
+			"dword", BitShift($iOriginY, -16) + $iOriginX, _
+			"ptr", $pFill)
+	If @error Then Return SetError(@error, @extended, False)
 
-	Return True
+	Return $aResult[0] <> 0
 EndFunc   ;==>_Console_ScrollScreenBufferEx
 
 ; #FUNCTION# ====================================================================================================================
@@ -3198,12 +2984,10 @@ EndFunc   ;==>_Console_ScrollScreenBufferEx
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_SetActiveScreenBuffer($hConsoleOutput, $hDll = -1)
-	Local $aResult
-
-	If $hConsoleOutput = -1 Then $hConsoleOutput = _Console_GetStdHandle($STD_OUTPUT_HANDLE, $hDll)
 	If $hDll = -1 Then $hDll = $__gvKernel32
+	If $hConsoleOutput = -1 Then $hConsoleOutput = _Console_GetStdHandle($STD_OUTPUT_HANDLE, $hDll)
 
-	$aResult = DllCall($hDll, "bool", "SetConsoleActiveScreenBuffer", _
+	Local $aResult = DllCall($hDll, "bool", "SetConsoleActiveScreenBuffer", _
 			"handle", $hConsoleOutput)
 	If @error Then Return SetError(@error, @extended, False)
 
@@ -3238,12 +3022,10 @@ EndFunc   ;==>_Console_SetActiveScreenBuffer
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_SetCP($iCodePageID, $hDll = -1)
-	Local $aResult
-
 	If $hDll = -1 Then $hDll = $__gvKernel32
 	If $iCodePageID < 0 Then Return False
 
-	$aResult = DllCall($hDll, "bool", "SetConsoleCP", _
+	Local $aResult = DllCall($hDll, "bool", "SetConsoleCP", _
 			"uint", $iCodePageID)
 	If @error Then Return SetError(@error, @extended, False)
 
@@ -3274,13 +3056,11 @@ EndFunc   ;==>_Console_SetCP
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_SetCtrlHandler($pHandlerRoutine, $fAdd = True, $hDll = -1)
-	Local $aResult
-
 	If $hDll = -1 Then $hDll = $__gvKernel32
 	If Not IsPtr($pHandlerRoutine) Then $pHandlerRoutine = DllCallbackGetPtr($pHandlerRoutine)
 	If $pHandlerRoutine = 0 Then Return False
 
-	$aResult = DllCall($hDll, "bool", "SetConsoleCtrlHandler", _
+	Local $aResult = DllCall($hDll, "bool", "SetConsoleCtrlHandler", _
 			"ptr", $pHandlerRoutine, _
 			"bool", $fAdd)
 	If @error Then Return SetError(@error, @extended, 0)
@@ -3310,19 +3090,17 @@ EndFunc   ;==>_Console_SetCtrlHandler
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_SetCursorInfo($hConsoleOutput, $iSize, $fVisible, $hDll = -1)
-	Local $tConsoleCursorInfo, $aResult
-
 	If $hDll = -1 Then $hDll = $__gvKernel32
 	If $hConsoleOutput = -1 Then $hConsoleOutput = _Console_GetStdHandle($STD_OUTPUT_HANDLE, $hDll)
 
 	If $iSize = Default Then $iSize = _Console_GetCursorSize($hConsoleOutput, $hDll)
 	If $fVisible = Default Then $fVisible = _Console_GetCursorVisible($hConsoleOutput, $hDll)
 
-	$tConsoleCursorInfo = DllStructCreate($tagCONSOLE_CURSOR_INFO)
+	Local $tConsoleCursorInfo = DllStructCreate($tagCONSOLE_CURSOR_INFO)
 	$tConsoleCursorInfo.Size = $iSize
 	$tConsoleCursorInfo.Visible = $fVisible
 
-	$aResult = DllCall($hDll, "bool", "SetConsoleCursorInfo", _
+	Local $aResult = DllCall($hDll, "bool", "SetConsoleCursorInfo", _
 			"handle", $hConsoleOutput, _
 			"struct*", $tConsoleCursorInfo)
 	If @error Then Return SetError(@error, @extended, False)
@@ -3398,16 +3176,12 @@ EndFunc   ;==>_Console_SetCursorVisible
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_SetCursorPosition($hConsoleOutput, $iX, $iY, $hDll = -1)
-	Local $iCursorPosition, $aResult
-
 	If $hConsoleOutput = -1 Then $hConsoleOutput = _Console_GetStdHandle($STD_OUTPUT_HANDLE, $hDll)
 	If $hDll = -1 Then $hDll = $__gvKernel32
 
-	$iCursorPosition = BitShift($iY, -16) + $iX
-
-	$aResult = DllCall($hDll, "bool", "SetConsoleCursorPosition", _
+	Local $aResult = DllCall($hDll, "bool", "SetConsoleCursorPosition", _
 			"handle", $hConsoleOutput, _
-			"int", $iCursorPosition)
+			"int", BitShift($iY, -16) + $iX)
 	If @error Then Return SetError(@error, @extended, False)
 
 	Return $aResult[0] <> 0
@@ -3447,12 +3221,10 @@ EndFunc   ;==>_Console_SetCursorPosition
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_SetCurrentFontEx($hConsoleOutput, $iFont, $iWidth, $iHeight, $iFontFamily, $iFontWeight, $sFaceName, $fMaximumWindow = False, $hDll = -1)
-	Local $tConsoleCurrentFontEx, $aResult
-
-	If $hConsoleOutput = -1 Then $hConsoleOutput = _Console_GetStdHandle($STD_OUTPUT_HANDLE, $hDll)
 	If $hDll = -1 Then $hDll = $__gvKernel32
+	If $hConsoleOutput = -1 Then $hConsoleOutput = _Console_GetStdHandle($STD_OUTPUT_HANDLE, $hDll)
 
-	$tConsoleCurrentFontEx = DllStructCreate($tagCONSOLE_FONT_INFOEX)
+	Local $tConsoleCurrentFontEx = DllStructCreate($tagCONSOLE_FONT_INFOEX)
 	$tConsoleCurrentFontEx.Font = $iFont
 	$tConsoleCurrentFontEx.X = $iWidth
 	$tConsoleCurrentFontEx.Y = $iHeight
@@ -3461,7 +3233,7 @@ Func _Console_SetCurrentFontEx($hConsoleOutput, $iFont, $iWidth, $iHeight, $iFon
 	$tConsoleCurrentFontEx.FaceName = $sFaceName
 	$tConsoleCurrentFontEx.Size = DllStructGetSize($tConsoleCurrentFontEx)
 
-	$aResult = DllCall($hDll, "bool", "SetCurrentConsoleFontEx", _
+	Local $aResult = DllCall($hDll, "bool", "SetCurrentConsoleFontEx", _
 			"handle", $hConsoleOutput, _
 			"bool", $fMaximumWindow, _
 			"struct*", $tConsoleCurrentFontEx)
@@ -3493,17 +3265,13 @@ EndFunc   ;==>_Console_SetCurrentFontEx
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_SetDisplayMode($hConsoleOutput, $iWidth, $iHeight, $iFlags, $hDll = -1)
-	Local $tCOORD, $aResult
-
-	If $hConsoleOutput = -1 Then $hConsoleOutput = _Console_GetStdHandle($STD_OUTPUT_HANDLE, $hDll)
 	If $hDll = -1 Then $hDll = $__gvKernel32
+	If $hConsoleOutput = -1 Then $hConsoleOutput = _Console_GetStdHandle($STD_OUTPUT_HANDLE, $hDll)
 
-	$tCOORD = BitShift($iHeight, -16) + $iWidth
-
-	$aResult = DllCall($hDll, "bool", "SetConsoleDisplayMode", _
+	Local $aResult = DllCall($hDll, "bool", "SetConsoleDisplayMode", _
 			"handle", $hConsoleOutput, _
 			"dword", $iFlags, _
-			"int", $tCOORD)
+			"int", BitShift($iHeight, -16) + $iWidth)
 	If @error Then Return SetError(@error, @extended, False)
 
 	Return $aResult[0]
@@ -3528,17 +3296,15 @@ EndFunc   ;==>_Console_SetDisplayMode
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_SetHistoryInfo($iHistoryBufferSize, $iNumberOfBuffers, $fStoreDuplicates, $hDll = -1)
-	Local $tConsoleHistoryInfo, $aResult
-
 	If $hDll = -1 Then $hDll = $__gvKernel32
 
-	$tConsoleHistoryInfo = DllStructCreate($tagCONSOLE_HISTORY_INFO)
+	Local $tConsoleHistoryInfo = DllStructCreate($tagCONSOLE_HISTORY_INFO)
 	$tConsoleHistoryInfo.HistoryBufferSize = $iHistoryBufferSize
 	$tConsoleHistoryInfo.NumberOfHistoryBuffers = $iNumberOfBuffers
 	$tConsoleHistoryInfo.Flags = 0
 	If Not $fStoreDuplicates Then $tConsoleHistoryInfo.Flags = $HISTORY_NO_DUP_FLAG
 
-	$aResult = DllCall($hDll, "bool", "SetConsoleHistoryInfo", _
+	Local $aResult = DllCall($hDll, "bool", "SetConsoleHistoryInfo", _
 			"struct*", $tConsoleHistoryInfo)
 	If @error Then Return SetError(@error, @extended, False)
 
@@ -3561,17 +3327,15 @@ EndFunc   ;==>_Console_SetHistoryInfo
 ; Remarks .......: This function is a wrapper for the _Console_SetIconEx function, using _WinAPI_ExtractIconEx to get the
 ;                  the handle of the icon from the file.
 ; Related .......: _WinAPI_ExtractIconEx, _Console_SetIconEx
-; Link ..........: This function is not documented on MSDN.
+; Link ..........:
 ; Example .......: Yes
 ; ===============================================================================================================================
 Func _Console_SetIcon($sFile, $iInd = 0, $hDll = -1)
-	Local $tHICON, $hIcon, $fResult
-
-	$tHICON = DllStructCreate("int")
-	$fResult = _WinAPI_ExtractIconEx($sFile, $iInd, 0, DllStructGetPtr($tHICON), 1)
+	Local $tHICON = DllStructCreate("int")
+	Local $fResult = _WinAPI_ExtractIconEx($sFile, $iInd, 0, DllStructGetPtr($tHICON), 1)
 	If @error Or Not $fResult Then Return SetError(@error, @extended, False)
 
-	$hIcon = DllStructGetData($tHICON, 1, 1)
+	Local $hIcon = DllStructGetData($tHICON, 1, 1)
 	If $hIcon = 0 Then Return SetError(1, 0, False)
 
 	$fResult = _Console_SetIconEx($hIcon, $hDll)
@@ -3600,11 +3364,9 @@ EndFunc   ;==>_Console_SetIcon
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_SetIconEx($hIcon, $hDll = -1)
-	Local $aResult
-
 	If $hDll = -1 Then $hDll = $__gvKernel32
 
-	$aResult = DllCall($hDll, "bool", "SetConsoleIcon", _
+	Local $aResult = DllCall($hDll, "bool", "SetConsoleIcon", _
 			"handle", $hIcon)
 	If @error Then Return SetError(@error, @extended, False)
 
@@ -3690,12 +3452,10 @@ EndFunc   ;==>_Console_SetIconEx
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_SetMode($hConsoleHandle, $iMode, $hDll = -1)
-	Local $aResult
-
-	If $hConsoleHandle = -1 Then $hConsoleHandle = _Console_GetStdHandle($STD_INPUT_HANDLE, $hDll)
 	If $hDll = -1 Then $hDll = $__gvKernel32
+	If $hConsoleHandle = -1 Then $hConsoleHandle = _Console_GetStdHandle($STD_INPUT_HANDLE, $hDll)
 
-	$aResult = DllCall($hDll, "bool", "SetConsoleMode", _
+	Local $aResult = DllCall($hDll, "bool", "SetConsoleMode", _
 			"handle", $hConsoleHandle, _
 			"dword", $iMode)
 	If @error Then Return SetError(@error, @extended, False)
@@ -3732,11 +3492,9 @@ EndFunc   ;==>_Console_SetMode
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_SetOutputCP($iCodePageID, $hDll = -1)
-	Local $aResult
-
 	If $hDll = -1 Then $hDll = $__gvKernel32
 
-	$aResult = DllCall($hDll, "bool", "SetConsoleOutputCP", _
+	Local $aResult = DllCall($hDll, "bool", "SetConsoleOutputCP", _
 			"uint", $iCodePageID)
 	If @error Then Return SetError(@error, @extended, False)
 
@@ -3799,14 +3557,12 @@ EndFunc   ;==>_Console_SetOutputCP
 Func _Console_SetScreenBufferInfoEx($hConsoleOutput, $iSizeX, $iSizeY, $iCursorPositionX, $iCursorPositionY, _
 		$iAttributes, $iLeft, $iTop, $iRight, $iBottom, $iMaximumWindowSizeX, $iMaximumWindowSizeY, $iPopupAttributes, _
 		$fFullscreenSupported, $aiColorTable, $hDll = -1)
-	Local $tConsoleScreenBufferInfoEx, $i, $fResult
-
 	If $hConsoleOutput = -1 Then $hConsoleOutput = _Console_GetStdHandle($STD_OUTPUT_HANDLE, $hDll)
 	If Not IsArray($aiColorTable) Then Return False
 	If UBound($aiColorTable, 0) <> 1 Then Return False
 	If UBound($aiColorTable, 1) < 16 Then Return False
 
-	$tConsoleScreenBufferInfoEx = DllStructCreate($tagCONSOLE_SCREEN_BUFFER_INFOEX)
+	Local $tConsoleScreenBufferInfoEx = DllStructCreate($tagCONSOLE_SCREEN_BUFFER_INFOEX)
 	$tConsoleScreenBufferInfoEx.SizeX = $iSizeX
 	$tConsoleScreenBufferInfoEx.SizeY = $iSizeY
 	$tConsoleScreenBufferInfoEx.CursorPositionX = $iCursorPositionX
@@ -3825,7 +3581,7 @@ Func _Console_SetScreenBufferInfoEx($hConsoleOutput, $iSizeX, $iSizeY, $iCursorP
 	Next
 	$tConsoleScreenBufferInfoEx.Size = DllStructGetSize($tConsoleScreenBufferInfoEx)
 
-	$fResult = _Console_SetScreenBufferInfoExEx($hConsoleOutput, DllStructGetPtr($tConsoleScreenBufferInfoEx), $hDll)
+	Local $fResult = _Console_SetScreenBufferInfoExEx($hConsoleOutput, DllStructGetPtr($tConsoleScreenBufferInfoEx), $hDll)
 	If @error Then Return SetError(@error, @extended, False)
 
 	Return $fResult
@@ -3850,12 +3606,10 @@ EndFunc   ;==>_Console_SetScreenBufferInfoEx
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_SetScreenBufferInfoExEx($hConsoleOutput, $pConsoleScreenBufferInfoEx, $hDll = -1)
-	Local $aResult
-
-	If $hConsoleOutput = -1 Then $hConsoleOutput = _Console_GetStdHandle($STD_OUTPUT_HANDLE, $hDll)
 	If $hDll = -1 Then $hDll = $__gvKernel32
+	If $hConsoleOutput = -1 Then $hConsoleOutput = _Console_GetStdHandle($STD_OUTPUT_HANDLE, $hDll)
 
-	$aResult = DllCall($hDll, "bool", "SetConsoleScreenBufferInfoEx", _
+	Local $aResult = DllCall($hDll, "bool", "SetConsoleScreenBufferInfoEx", _
 			"handle", $hConsoleOutput, _
 			"ptr", $pConsoleScreenBufferInfoEx)
 	If @error Then Return SetError(@error, @extended, False)
@@ -3883,16 +3637,12 @@ EndFunc   ;==>_Console_SetScreenBufferInfoExEx
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_SetScreenBufferSize($hConsoleOutput, $iWidth, $iHeight, $hDll = -1)
-	Local $tSize, $aResult
-
-	If $hConsoleOutput = -1 Then $hConsoleOutput = _Console_GetStdHandle($STD_OUTPUT_HANDLE, $hDll)
 	If $hDll = -1 Then $hDll = $__gvKernel32
+	If $hConsoleOutput = -1 Then $hConsoleOutput = _Console_GetStdHandle($STD_OUTPUT_HANDLE, $hDll)
 
-	$tSize = BitShift($iHeight, -16) + $iWidth
-
-	$aResult = DllCall($hDll, "bool", "SetConsoleScreenBufferSize", _
+	Local $aResult = DllCall($hDll, "bool", "SetConsoleScreenBufferSize", _
 			"handle", $hConsoleOutput, _
-			"int", $tSize)
+			"int", BitShift($iHeight, -16) + $iWidth)
 	If @error Then Return SetError(@error, @extended, False)
 
 	Return $aResult[0] <> 0
@@ -3923,11 +3673,9 @@ EndFunc   ;==>_Console_SetScreenBufferSize
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_SetStdHandle($nStdHandle, $hHandle, $hDll = -1)
-	Local $aResult
-
 	If $hDll = -1 Then $hDll = $__gvKernel32
 
-	$aResult = DllCall($hDll, "bool", "SetStdHandle", _
+	Local $aResult = DllCall($hDll, "bool", "SetStdHandle", _
 			"dword", $nStdHandle, _
 			"handle", $hHandle)
 	If @error Then Return SetError(@error, @extended, False)
@@ -3975,12 +3723,10 @@ EndFunc   ;==>_Console_SetStdHandle
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_SetTextAttribute($hConsoleOutput, $iAttributes, $hDll = -1)
-	Local $aResult
-
-	If $hConsoleOutput = -1 Then $hConsoleOutput = _Console_GetStdHandle($STD_OUTPUT_HANDLE, $hDll)
 	If $hDll = -1 Then $hDll = $__gvKernel32
+	If $hConsoleOutput = -1 Then $hConsoleOutput = _Console_GetStdHandle($STD_OUTPUT_HANDLE, $hDll)
 
-	$aResult = DllCall($hDll, "bool", "SetConsoleTextAttribute", _
+	Local $aResult = DllCall($hDll, "bool", "SetConsoleTextAttribute", _
 			"handle", $hConsoleOutput, _
 			"word", $iAttributes)
 	If @error Then Return SetError(@error, @extended, False)
@@ -4006,18 +3752,11 @@ EndFunc   ;==>_Console_SetTextAttribute
 ; Example .......: Yes
 ; ===============================================================================================================================
 Func _Console_SetTitle($sConsoleTitle, $fUnicode = Default, $hDll = -1)
-	Local $aResult
-
 	If $fUnicode = Default Then $fUnicode = $__gfUnicode
 	If $hDll = -1 Then $hDll = $__gvKernel32
 
-	If $fUnicode Then
-		$aResult = DllCall($hDll, "bool", "SetConsoleTitleW", _
-				"wstr", $sConsoleTitle)
-	Else
-		$aResult = DllCall($hDll, "bool", "SetConsoleTitleA", _
-				"str", $sConsoleTitle)
-	EndIf
+	Local $aResult = DllCall($hDll, "bool", "SetConsoleTitle" & ($fUnicode ? "A" : "W"), _
+			($fUnicode ? "w" : "") & "str", $sConsoleTitle)
 	If @error Then Return SetError(@error, @extended, False)
 
 	Return $aResult[0] <> 0
@@ -4048,18 +3787,16 @@ EndFunc   ;==>_Console_SetTitle
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_SetWindowInfo($hConsoleOutput, $iLeft, $iTop, $iRight, $iBottom, $fAbsolute = True, $hDll = -1)
-	Local $tConsoleWindow, $aResult
-
 	If $hConsoleOutput = -1 Then $hConsoleOutput = _Console_GetStdHandle($STD_OUTPUT_HANDLE, $hDll)
 	If $hDll = -1 Then $hDll = $__gvKernel32
 
-	$tConsoleWindow = DllStructCreate($tagSMALL_RECT)
+	Local $tConsoleWindow = DllStructCreate($tagSMALL_RECT)
 	$tConsoleWindow.Left = $iLeft
 	$tConsoleWindow.Top = $iTop
 	$tConsoleWindow.Right = $iRight
 	$tConsoleWindow.Bottom = $iBottom
 
-	$aResult = DllCall($hDll, "bool", "SetConsoleWindowInfo", _
+	Local $aResult = DllCall($hDll, "bool", "SetConsoleWindowInfo", _
 			"handle", $hConsoleOutput, _
 			"bool", $fAbsolute, _
 			"struct*", $tConsoleWindow)
@@ -4135,10 +3872,8 @@ EndFunc   ;==>_Console_Write
 ; Example .......: Yes
 ; ===============================================================================================================================
 Func _Console_WriteConsole($hConsole, $sText, $fUnicode = Default, $hDll = -1)
-	Local $aResult
-
 	If $__gfIsCUI Then
-		$aResult = ConsoleWrite($sText)
+		Local $aResult = ConsoleWrite($sText)
 
 		Return SetExtended($aResult, $aResult <> 0)
 	Else
@@ -4146,21 +3881,12 @@ Func _Console_WriteConsole($hConsole, $sText, $fUnicode = Default, $hDll = -1)
 		If $hDll = -1 Then $hDll = $__gvKernel32
 		If $hConsole = -1 Then $hConsole = _Console_GetStdHandle($STD_OUTPUT_HANDLE, $hDll)
 
-		If $fUnicode Then
-			$aResult = DllCall($hDll, "bool", "WriteConsoleW", _
-					"handle", $hConsole, _
-					"wstr", $sText, _
-					"dword", StringLen($sText), _
-					"dword*", 0, _
-					"ptr", 0)
-		Else
-			$aResult = DllCall($hDll, "bool", "WriteConsoleA", _
-					"handle", $hConsole, _
-					"str", $sText, _
-					"dword", StringLen($sText), _
-					"dword*", 0, _
-					"ptr", 0)
-		EndIf
+		Local $aResult = DllCall($hDll, "bool", "WriteConsole" & ($fUnicode ? "A" : "W"), _
+				"handle", $hConsole, _
+				($fUnicode ? "w" : "") & "str", $sText, _
+				"dword", StringLen($sText), _
+				"dword*", 0, _
+				"ptr", 0)
 		If @error Then Return SetError(@error, @extended, False)
 
 		Return SetExtended($aResult[4], $aResult[0] <> 0)
@@ -4234,28 +3960,24 @@ EndFunc   ;==>_Console_WriteLine
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_WriteOutputAttribute($hConsole, $aiAttributes, $iX, $iY, $iStart = 0, $iEnd = -1, $hDll = -1)
-	Local $tCOORD, $iBnd, $tAttributes, $aResult
-
 	If Not IsArray($aiAttributes) Then Return SetError(1, 0, False)
 	If UBound($aiAttributes, 0) <> 1 Then Return SetError(1, 0, False)
-	$iBnd = UBound($aiAttributes) - 1
+	Local $iBnd = UBound($aiAttributes) - 1
 	If $iEnd > $iBnd Or $iEnd < $iStart Then $iEnd = $iBnd
 
 	If $hDll = -1 Then $hDll = $__gvKernel32
 	If $hConsole = -1 Then $hConsole = _Console_GetStdHandle($STD_OUTPUT_HANDLE, $hDll)
 
-	$tCOORD = BitShift($iY, -16) + $iX
-
-	$tAttributes = DllStructCreate("word[" & ($iEnd - $iStart + 1) & "]")
+	Local $tAttributes = DllStructCreate("word[" & ($iEnd - $iStart + 1) & "]")
 	For $i = $iStart To $iEnd
 		DllStructSetData($tAttributes, 1, $aiAttributes[$i], $i - $iStart + 1)
 	Next
 
-	$aResult = DllCall($hDll, "bool", "WriteConsoleOutputAttribute", _
+	Local $aResult = DllCall($hDll, "bool", "WriteConsoleOutputAttribute", _
 			"handle", $hConsole, _
 			"struct*", $tAttributes, _
 			"dword", $iEnd - $iStart + 1, _
-			"dword", $tCOORD, _
+			"dword", BitShift($iY, -16) + $iX, _
 			"dword*", 0)
 	If @error Then Return SetError(@error, @extended, False)
 
@@ -4288,29 +4010,17 @@ EndFunc   ;==>_Console_WriteOutputAttribute
 ; Example .......: No
 ; ===============================================================================================================================
 Func _Console_WriteOutputCharacter($hConsole, $sText, $iX, $iY, $fUnicode = Default, $hDll = -1)
-	Local $tCOORD, $aResult
-
 	If $fUnicode = Default Then $fUnicode = $__gfUnicode
 	If $hDll = -1 Then $hDll = $__gvKernel32
 	If $hConsole = -1 Then $hConsole = _Console_GetStdHandle($STD_OUTPUT_HANDLE, $hDll)
 
-	$tCOORD = BitShift($iY, -16) + $iX
+	Local $aResult = DllCall($hDll, "bool", "WriteConsoleOutputCharacter" & ($fUnicode ? "A" : "W"), _
+			"handle", $hConsole, _
+			($fUnicode ? "w" : "") & "str", $sText, _
+			"dword", StringLen($sText), _
+			"dword", BitShift($iY, -16) + $iX, _
+			"dword*", 0)
+	If @error then Return SetError(1, @error, False)
 
-	If $fUnicode Then
-		$aResult = DllCall($hDll, "bool", "WriteConsoleOutputCharacterW", _
-				"handle", $hConsole, _
-				"wstr", $sText, _
-				"dword", StringLen($sText), _
-				"dword", $tCOORD, _
-				"dword*", 0)
-	Else
-		$aResult = DllCall($hDll, "bool", "WriteConsoleOutputCharacterA", _
-				"handle", $hConsole, _
-				"str", $sText, _
-				"dword", StringLen($sText), _
-				"dword", $tCOORD, _
-				"dword*", 0)
-	EndIf
-
-	Return SetError(@error, @extended, $aResult[0])
+	Return True
 EndFunc   ;==>_Console_WriteOutputCharacter
