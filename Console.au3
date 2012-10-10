@@ -7,7 +7,7 @@
 ; #INDEX# =======================================================================================================================
 ; Title .........: Console.au3
 ; Version .......: 0.0.0.28
-; AutoIt Version : 3.3.0.0+
+; AutoIt Version : 3.3.9.5a1+
 ; Minimum OS ....: Windows 2000
 ; Language ......: English
 ; Description ...: The following functions are used to access a console.
@@ -76,8 +76,14 @@
 ; _Console_GetTitle
 ; _Console_GetWindow
 ; _Console_Pause
+; _Console_PauseMessage
 ; _Console_Read
 ; _Console_ReadConsole
+; _Console_ReadConsoleEx
+; _Console_ReadInput
+; _Console_ReadInputRecord
+; _Console_ReadConsoleInput
+; _Console_ReadConsoleInputRecord
 ; _Console_ReadOutputCharacter
 ; _Console_Run
 ; _Console_ScrollScreenBuffer
@@ -268,7 +274,7 @@ Global $__gfIsCUI = (_Console_GetStdHandle($STD_OUTPUT_HANDLE) <> 0)
 ; ===============================================================================================================================
 
 ; #STRUCTURE# ===================================================================================================================
-; Name...........: $tagCHAR_INFO_W
+; Name ..........: $tagCHAR_INFO_W
 ; Description ...: Specifies a Unicode character and its attributes. This structure is used by console functions to read from
 ;                  and write to a console screen buffer.
 ; Fields ........: Char                 - Unicode character of a screen buffer character cell.
@@ -295,7 +301,7 @@ Global $__gfIsCUI = (_Console_GetStdHandle($STD_OUTPUT_HANDLE) <> 0)
 Global Const $tagCHAR_INFO_W = "WCHAR Char; WORD Attributes"
 
 ; #STRUCTURE# ===================================================================================================================
-; Name...........: $tagCHAR_INFO_A
+; Name ..........: $tagCHAR_INFO_A
 ; Description ...: Specifies a Ascii character and its attributes. This structure is used by console functions to read from
 ;                  and write to a console screen buffer.
 ; Fields ........: Char                 - Ascii character of a screen buffer character cell.
@@ -322,7 +328,7 @@ Global Const $tagCHAR_INFO_W = "WCHAR Char; WORD Attributes"
 Global Const $tagCHAR_INFO_A = "CHAR Char; CHAR; WORD Attributes"
 
 ; #STRUCTURE# ===================================================================================================================
-; Name...........: $tagCHAR_INFO
+; Name ..........: $tagCHAR_INFO
 ; Description ...: Specifies a character and its attributes. This structure is used by console functions to read from and write
 ;                  to a console screen buffer.
 ; Fields ........: UnicodeChar          - Unicode character of a screen buffer character cell.
@@ -349,7 +355,7 @@ Global Const $tagCHAR_INFO_A = "CHAR Char; CHAR; WORD Attributes"
 Global Const $tagCHAR_INFO = $tagCHAR_INFO_W
 
 ; #STRUCTURE# ===================================================================================================================
-; Name...........: $tagCONSOLE_CURSOR_INFO
+; Name ..........: $tagCONSOLE_CURSOR_INFO
 ; Description ...: Contains information about the console cursor.
 ; Fields ........: Size                 - The percentage of the character cell that is filled by the cursor. This value is
 ;                                         between 1 and 100. The cursor appearance varies, ranging from completely filling the
@@ -361,7 +367,7 @@ Global Const $tagCHAR_INFO = $tagCHAR_INFO_W
 Global Const $tagCONSOLE_CURSOR_INFO = "DWORD Size; BOOL Visible;"
 
 ; #STRUCTURE# ===================================================================================================================
-; Name...........: $tagCONSOLE_FONT_INFO
+; Name ..........: $tagCONSOLE_FONT_INFO
 ; Description ...: Contains information for a console font.
 ; Fields ........: Font                 - The index of the font in the system's console font table.
 ;                  X                    - Contains the width of each character in the font, in logical units.
@@ -372,7 +378,7 @@ Global Const $tagCONSOLE_CURSOR_INFO = "DWORD Size; BOOL Visible;"
 Global Const $tagCONSOLE_FONT_INFO = "DWORD Font; SHORT X; SHORT Y;"
 
 ; #STRUCTURE# ===================================================================================================================
-; Name...........: $tagCONSOLE_FONT_INFO_EX
+; Name ..........: $tagCONSOLE_FONT_INFO_EX
 ; Description ...: Contains extended information for a console font.
 ; Fields ........: Size                 - The size of this structure, in bytes.
 ;                  Font                 - The index of the font in the system's console font table.
@@ -395,7 +401,7 @@ Global Const $tagCONSOLE_FONT_INFOEX = "ULONG Size; DWORD Font; SHORT X; SHORT Y
 		"wchar[32] FaceName;"
 
 ; #STRUCTURE# ===================================================================================================================
-; Name...........: $tagCONSOLE_HISTORY_INFO
+; Name ..........: $tagCONSOLE_HISTORY_INFO
 ; Description ...: Contains information about the console history.
 ; Fields ........: Size                 - The size of the structure, in bytes. Set this member to
 ;                                         DllStructGetSize($tCONSOLE_HISTORY_INFO).
@@ -409,7 +415,7 @@ Global Const $tagCONSOLE_FONT_INFOEX = "ULONG Size; DWORD Font; SHORT X; SHORT Y
 Global Const $tagCONSOLE_HISTORY_INFO = "UINT Size; UINT HistoryBufferSize; UINT NumberOfHistoryBuffers; DWORD Flags;"
 
 ; #STRUCTURE# ===================================================================================================================
-; Name...........: $tagCONSOLE_READCONSOLE_CONTROL
+; Name ..........: $tagCONSOLE_READCONSOLE_CONTROL
 ; Description ...: Contains information for a console read operation.
 ; Fields ........: Length               - The size of the structure. Set this member to
 ;                                         DllStructGetSize($tCONSOLE_READCONSOLE_CONTROL).
@@ -433,7 +439,7 @@ Global Const $tagCONSOLE_HISTORY_INFO = "UINT Size; UINT HistoryBufferSize; UINT
 Global Const $tagCONSOLE_READCONSOLE_CONTROL = "ULONG Length; ULONG InitialChars; ULONG CtrlWakeupMask; ULONG ControlKeyState;"
 
 ; #STRUCTURE# ===================================================================================================================
-; Name...........: $tagCONSOLE_SCREEN_BUFFER_INFO
+; Name ..........: $tagCONSOLE_SCREEN_BUFFER_INFO
 ; Description ...: Contains information about a console screen buffer.
 ; Fields ........: SizeX                - The width of the console screen buffer, in character columns and rows.
 ;                  SizeY                - The height of the console screen buffer, in character columns and rows.
@@ -458,7 +464,7 @@ Global Const $tagCONSOLE_SCREEN_BUFFER_INFO = "SHORT SizeX; SHORT SizeY; SHORT C
 		"SHORT MaximumWindowSizeX; SHORT MaximumWindowSizeY"
 
 ; #STRUCTURE# ===================================================================================================================
-; Name...........: $tagCONSOLE_SCREEN_BUFFER_INFOEX
+; Name ..........: $tagCONSOLE_SCREEN_BUFFER_INFOEX
 ; Description ...: Contains extended information about a console screen buffer.
 ; Fields ........: Size                 - The size of this structure, in bytes. Should be set to
 ;                                         DllStructGetSize($tCONSOLE_SCREEN_BUFFER_INFO)
@@ -489,7 +495,7 @@ Global Const $tagCONSOLE_SCREEN_BUFFER_INFOEX = "ULONG Size; SHORT SizeX; SHORT 
 		"DWORD ColorTable[16];"
 
 ; #STRUCTURE# ===================================================================================================================
-; Name...........: $tagCONSOLE_SELECTION_INFO
+; Name ..........: $tagCONSOLE_SELECTION_INFO
 ; Description ...: Contains information for a console selection.
 ; Fields ........: Flags                - The selection indicator. This member can be one or more of the following values.
 ;                                       |CONSOLE_MOUSE_DOWN - Mouse is down
@@ -581,7 +587,7 @@ Global Const $tagKEY_EVENT_RECORD_A = "BOOL KeyDown; WORD RepeatCount; WORD Virt
 		"CHAR Char; CHAR; DWORD ControlKeyState;"
 
 ; #STRUCTURE# ===================================================================================================================
-; Name ..........: $tagKEY_EVENT_RECORD_A
+; Name ..........: $tagKEY_EVENT_RECORD
 ; Description ...: Describes a keyboard input event in a console INPUT_RECORD structure
 ; Fields ........: KeyDown              - If the key is pressed, this member is TRUE. Otherwise, this member is FALSE (the key is
 ;                                         released).
@@ -614,9 +620,6 @@ Global Const $tagKEY_EVENT_RECORD_A = "BOOL KeyDown; WORD RepeatCount; WORD Virt
 ; Link ..........: http://msdn.microsoft.com/en-us/library/ms684166
 ; ===============================================================================================================================
 Global Const $tagKEY_EVENT_RECORD = $tagKEY_EVENT_RECORD_W
-
-
-#region WIP
 
 ; #STRUCTURE# ===================================================================================================================
 ; Name ..........: $tagMOUSE_EVENT_RECORD
@@ -664,7 +667,7 @@ Global Const $tagKEY_EVENT_RECORD = $tagKEY_EVENT_RECORD_W
 ;                  Mouse events are generated whenever the user moves the mouse, or presses or releases one of the mouse buttons.
 ;                  Mouse events are placed in a console's input buffer only when the console group has the keyboard focus and the
 ;                  cursor is within the borders of the console's window.
-; Related .......: $tagINPUT_RECORD, $tagINPUT_RECORD_MOUSE
+; Related .......: _Console_ReadInputRecord, _Console_ReadInput, $tagINPUT_RECORD, $tagINPUT_RECORD_MOUSE
 ; Link ..........: http://msdn.microsoft.com/en-us/library/ms684239
 ; ===============================================================================================================================
 Global Const $tagMOUSE_EVENT_RECORD = "SHORT MousePositionX; SHORT MousePositionY; DWORD ButtonState; DWORD ControlKeyState;" & _
@@ -678,7 +681,7 @@ Global Const $tagMOUSE_EVENT_RECORD = "SHORT MousePositionX; SHORT MousePosition
 ; Author ........: Matt Diesel (Mat)
 ; Remarks .......: Buffer size events are placed in the input buffer when the console is in window-aware mode
 ;                  (ENABLE_WINDOW_INPUT).
-; Related .......: $tagINPUT_RECORD, $tagINPUT_RECORD_SIZE
+; Related .......: _Console_ReadInputRecord, _Console_ReadInput, $tagINPUT_RECORD, $tagINPUT_RECORD_SIZE
 ; Link ..........: http://msdn.microsoft.com/en-us/library/ms687093
 ; ===============================================================================================================================
 Global Const $tagWINDOW_BUFFER_SIZE_RECORD = "SHORT SizeX; SHORT SizeY;"
@@ -687,33 +690,258 @@ Global Const $tagWINDOW_BUFFER_SIZE_RECORD = "SHORT SizeX; SHORT SizeY;"
 ; Name ..........: $tagMENU_EVENT_RECORD
 ; Description ...: Describes a menu event in a console $tagINPUT_RECORD structure. These events are used internally and should be
 ;                  ignored.
-; Fields ........: CommandId            - Reserved according to MSDN documentation. In reality these correspond to the standard
-;                                         menu ids.
-; Author ........: Your Name
+; Fields ........: CommandId            - Reserved according to MSDN documentation. From testing it seems the only messages sent
+;                                         are menu opening (278) and menu closing (287). This is regardless of whether the
+;                                         console is window aware or not.
+; Author ........: Matt Diesel (Mat)
 ; Remarks .......:
-; Related .......:
+; Related .......: _Console_ReadInputRecord, _Console_ReadInput, $tagINPUT_RECORD, $tagINPUT_RECORD_MENU
+; Link ..........: http://msdn.microsoft.com/en-us/library/ms684213
 ; ===============================================================================================================================
 Global Const $tagMENU_EVENT_RECORD = "UINT CommandId;"
 
+; #STRUCTURE# ===================================================================================================================
+; Name ..........: $tagFOCUS_EVENT_RECORD
+; Description ...: Describes a focus event in a console tagINPUT_RECORD structure. These events are used internally and should be
+;                  ignored.
+; Fields ........: SetFocus             - Reserved according to MSDN. True if window is gaining focus, False if it is losing
+;                                         focus.
+; Author ........: Matt Diesel (Mat)
+; Remarks .......:
+; Related .......: _Console_ReadInputRecord, _Console_ReadInput, $tagINPUT_RECORD, $tagINPUT_RECORD_FOCUS
+; Link ..........: http://msdn.microsoft.com/en-us/library/ms683149
+; ===============================================================================================================================
 Global Const $tagFOCUS_EVENT_RECORD = "BOOL SetFocus;"
 
-
-; 18 bytes
-Global Const $tagINPUT_RECORD = "WORD EventType; BYTE[16];"
-
-Global Const $tagINPUT_RECORD_KEY = "WORD EventType; STRUCT; " & $tagKEY_EVENT_RECORD & "ENDSTRUCT;"
-Global Const $tagINPUT_RECORD_KEY_A = "WORD EventType; STRUCT; " & $tagKEY_EVENT_RECORD_A & "ENDSTRUCT;"
-Global Const $tagINPUT_RECORD_KEY_W = "WORD EventType; STRUCT; " & $tagKEY_EVENT_RECORD_W & "ENDSTRUCT;"
-Global Const $tagINPUT_RECORD_MOUSE = "WORD EventType; STRUCT; " & $tagMOUSE_EVENT_RECORD & "ENDSTRUCT;"
-Global Const $tagINPUT_RECORD_SIZE = "WORD EventType; STRUCT; " & $tagWINDOW_BUFFER_SIZE_RECORD & "BYTE[12]; ENDSTRUCT;"
-Global Const $tagINPUT_RECORD_MENU = "WORD EventType; STRUCT; " & $tagMENU_EVENT_RECORD & "BYTE[12]; ENDSTRUCT;"
-Global Const $tagINPUT_RECORD_FOCUS = "WORD EventType; STRUCT; " & $tagFOCUS_EVENT_RECORD & "BYTE[12]; ENDSTRUCT;"
-
-#endregion WIP
-
+; #STRUCTURE# ===================================================================================================================
+; Name ..........: $tagINPUT_RECORD
+; Description ...: Describes an input event in the console input buffer. These records can be read from the input buffer by using
+;                  the _Console_ReadInput or _Console_PeekInput function, or written to the input buffer by using the
+;                  _Console_WriteInput function.
+; Fields ........: EventType            - A handle to the type of input event. This member can be one of the following values:
+;                                       |FOCUS_EVENT - This structure is a $tagINPUT_RECORD_FOCUS structure.
+;                                       |KEY_EVENT - This structure is a $tagINPUT_RECORD_KEY structure.
+;                                       |MENU_EVENT - This structure is a $tagINPUT_RECORD_MENU structure.
+;                                       |MOUSE_EVENT - This structure is a $tagINPUT_RECORD_MOUSE structure.
+;                                       |WINDOW_BUFFER_SIZE_EVENT - This structure is a $tagINPUT_RECORD_SIZE structure.
+; Author ........: Matt Diesel (Mat)
+; Remarks .......:
+; Related .......: $tagINPUT_RECORD_KEY, $tagINPUT_RECORD_MOUSE, $tagINPUT_RECORD_SIZE, $tagINPUT_RECORD_MENU,
+;                  $tagINPUT_RECORD_FOCUS, _Console_ReadInputRecord, _Console_ReadInput
+; Link ..........: http://msdn.microsoft.com/en-us/library/ms683499
+; ===============================================================================================================================
+Global Const $tagINPUT_RECORD = "WORD EventType; BYTE buffer[16];"
 
 ; #STRUCTURE# ===================================================================================================================
-; Name...........: $tagSMALL_RECT
+; Name ..........: $tagINPUT_RECORD_KEY
+; Description ...: Describes a keyboard input event in the console INPUT_RECORD structure
+; Fields ........: EventType            - A handle to the type of input event. This should be set to KEY_EVENT if you are using
+;                                         this structure.
+;                  KeyDown              - If the key is pressed, this member is TRUE. Otherwise, this member is FALSE (the key is
+;                                         released).
+;                  RepeatCount          - The repeat count, which indicates that a key is being held down. For example, when a
+;                                         key is held down, you might get five events with this member equal to 1, one event with
+;                                         this member equal to 5, or multiple events with this member greater than or equal to 1.
+;                  VirtualKeyCode       - A virtual-key code that identifies the given key in a device-independent manner.
+;                  VirtualScanCode      - The virtual scan code of the given key that represents the device-dependent value
+;                                         generated by the keyboard hardware.
+;                  Char                 - Translated ASCII or Unicode character
+;                  ControlKeyState      - The state of the control keys. This member can be one or more of the following values:
+;                                       |CAPSLOCK_ON - The CAPS LOCK light is on.
+;                                       |ENHANCED_KEY - The key is enhanced.
+;                                       |LEFT_ALT_PRESSED - The left ALT key is pressed.
+;                                       |LEFT_CTRL_PRESSED - The left CTRL key is pressed.
+;                                       |NUMLOCK_ON - The NUM LOCK light is on.
+;                                       |RIGHT_ALT_PRESSED - The right ALT key is pressed.
+;                                       |RIGHT_CTRL_PRESSED - The right CTRL key is pressed.
+;                                       |SCROLLLOCK_ON - The SCROLL LOCK light is on.
+;                                       |SHIFT_PRESSED - The SHIFT key is pressed.
+; Author ........: Matt Diesel (Mat)
+; Remarks .......: Enhanced keys for the IBM 101- and 102-key keyboards are the INS, DEL, HOME, END, PAGE UP, PAGE DOWN, and
+;                  direction keys in the clusters to the left of the keypad; and the divide (/) and ENTER keys in the keypad.
+;+
+;                  Keyboard input events are generated when any key, including control keys, is pressed or released. However, the
+;                  ALT key when pressed and released without combining with another character, has special meaning to the system
+;                  and is not passed through to the application. Also, the CTRL+C key combination is not passed through if the
+;                  input handle is in processed mode (ENABLE_PROCESSED_INPUT).
+; Related .......: _Console_ReadInputRecord, _Console_ReadInput, $tagKEY_EVENT_RECORD_A, $tagKEY_EVENT_RECORD_W
+; Link ..........: http://msdn.microsoft.com/en-us/library/ms683499
+; ===============================================================================================================================
+Global Const $tagINPUT_RECORD_KEY = "WORD EventType; STRUCT; " & $tagKEY_EVENT_RECORD & "ENDSTRUCT;"
+
+; #STRUCTURE# ===================================================================================================================
+; Name ..........: $tagINPUT_RECORD_KEY_A
+; Description ...: Describes a keyboard input event in the console input buffer (ASCII version)
+; Fields ........: EventType            - A handle to the type of input event. This should be set to KEY_EVENT if you are using
+;                                         this structure.
+;                  KeyDown              - If the key is pressed, this member is TRUE. Otherwise, this member is FALSE (the key is
+;                                         released).
+;                  RepeatCount          - The repeat count, which indicates that a key is being held down. For example, when a
+;                                         key is held down, you might get five events with this member equal to 1, one event with
+;                                         this member equal to 5, or multiple events with this member greater than or equal to 1.
+;                  VirtualKeyCode       - A virtual-key code that identifies the given key in a device-independent manner.
+;                  VirtualScanCode      - The virtual scan code of the given key that represents the device-dependent value
+;                                         generated by the keyboard hardware.
+;                  Char                 - Translated ASCII character.
+;                  ControlKeyState      - The state of the control keys. This member can be one or more of the following values:
+;                                       |CAPSLOCK_ON - The CAPS LOCK light is on.
+;                                       |ENHANCED_KEY - The key is enhanced.
+;                                       |LEFT_ALT_PRESSED - The left ALT key is pressed.
+;                                       |LEFT_CTRL_PRESSED - The left CTRL key is pressed.
+;                                       |NUMLOCK_ON - The NUM LOCK light is on.
+;                                       |RIGHT_ALT_PRESSED - The right ALT key is pressed.
+;                                       |RIGHT_CTRL_PRESSED - The right CTRL key is pressed.
+;                                       |SCROLLLOCK_ON - The SCROLL LOCK light is on.
+;                                       |SHIFT_PRESSED - The SHIFT key is pressed.
+; Author ........: Matt Diesel (Mat)
+; Remarks .......: Enhanced keys for the IBM 101- and 102-key keyboards are the INS, DEL, HOME, END, PAGE UP, PAGE DOWN, and
+;                  direction keys in the clusters to the left of the keypad; and the divide (/) and ENTER keys in the keypad.
+;
+;                  Keyboard input events are generated when any key, including control keys, is pressed or released. However, the
+;                  ALT key when pressed and released without combining with another character, has special meaning to the system
+;                  and is not passed through to the application. Also, the CTRL+C key combination is not passed through if the
+;                  input handle is in processed mode (ENABLE_PROCESSED_INPUT).
+; Related .......: _Console_ReadInputRecord, _Console_ReadInput, $tagINPUT_RECORD_KEY, $tagINPUT_RECORD_KEY_W
+; Link ..........: http://msdn.microsoft.com/en-us/library/ms683499
+; ===============================================================================================================================
+Global Const $tagINPUT_RECORD_KEY_A = "WORD EventType; STRUCT; " & $tagKEY_EVENT_RECORD_A & "ENDSTRUCT;"
+
+; #STRUCTURE# ===================================================================================================================
+; Name ..........: $tagINPUT_RECORD_KEY_W
+; Description ...: Describes a keyboard input event in the console input buffer (Unicode version)
+; Fields ........: EventType            - A handle to the type of input event. This should be set to KEY_EVENT if you are using
+;                                         this structure.
+;                  KeyDown              - If the key is pressed, this member is TRUE. Otherwise, this member is FALSE (the key is
+;                                         released).
+;                  RepeatCount          - The repeat count, which indicates that a key is being held down. For example, when a
+;                                         key is held down, you might get five events with this member equal to 1, one event with
+;                                         this member equal to 5, or multiple events with this member greater than or equal to 1.
+;                  VirtualKeyCode       - A virtual-key code that identifies the given key in a device-independent manner.
+;                  VirtualScanCode      - The virtual scan code of the given key that represents the device-dependent value
+;                                         generated by the keyboard hardware.
+;                  Char                 - Translated Unicode character.
+;                  ControlKeyState      - The state of the control keys. This member can be one or more of the following values:
+;                                       |CAPSLOCK_ON - The CAPS LOCK light is on.
+;                                       |ENHANCED_KEY - The key is enhanced.
+;                                       |LEFT_ALT_PRESSED - The left ALT key is pressed.
+;                                       |LEFT_CTRL_PRESSED - The left CTRL key is pressed.
+;                                       |NUMLOCK_ON - The NUM LOCK light is on.
+;                                       |RIGHT_ALT_PRESSED - The right ALT key is pressed.
+;                                       |RIGHT_CTRL_PRESSED - The right CTRL key is pressed.
+;                                       |SCROLLLOCK_ON - The SCROLL LOCK light is on.
+;                                       |SHIFT_PRESSED - The SHIFT key is pressed.
+; Author ........: Matt Diesel (Mat)
+; Remarks .......: Enhanced keys for the IBM 101- and 102-key keyboards are the INS, DEL, HOME, END, PAGE UP, PAGE DOWN, and
+;                  direction keys in the clusters to the left of the keypad; and the divide (/) and ENTER keys in the keypad.
+;+
+;                  Keyboard input events are generated when any key, including control keys, is pressed or released. However, the
+;                  ALT key when pressed and released without combining with another character, has special meaning to the system
+;                  and is not passed through to the application. Also, the CTRL+C key combination is not passed through if the
+;                  input handle is in processed mode (ENABLE_PROCESSED_INPUT).
+; Related .......: _Console_ReadInputRecord, _Console_ReadInput, $tagINPUT_RECORD_KEY, $tagINPUT_RECORD_KEY_A
+; Link ..........: http://msdn.microsoft.com/en-us/library/ms683499
+; ===============================================================================================================================
+Global Const $tagINPUT_RECORD_KEY_W = "WORD EventType; STRUCT; " & $tagKEY_EVENT_RECORD_W & "ENDSTRUCT;"
+
+; #STRUCTURE# ===================================================================================================================
+; Name ..........: $tagINPUT_RECORD_MOUSE
+; Description ...: Describes a mouse input event in the console input buffer.
+; Fields ........: EventType            - A handle to the type of input event. This should be set to MOUSE_EVENT if you are using
+;                                         this structure.
+;                  MousePositionX       - The X coordinate of the location of the cursor, in terms of the console screen buffer's
+;                                         character-cell coordinates.
+;                  MousePositionY       - The Y coordinate of the location of the cursor, in terms of the console screen buffer's
+;                                         character-cell coordinates.
+;                  ButtonState          - The status of the mouse buttons. The least significant bit corresponds to the leftmost
+;                                         mouse button. The next least significant bit corresponds to the rightmost mouse button.
+;                                         The next bit indicates the next-to-leftmost mouse button. The bits then correspond left
+;                                         to right to the mouse buttons. A bit is 1 if the button was pressed.
+;+
+;                                         The following constants are defined for the first five mouse buttons:
+;                                         |FROM_LEFT_1ST_BUTTON_PRESSED - The leftmost mouse button.
+;                                         |FROM_LEFT_2ND_BUTTON_PRESSED - The second button from the left.
+;                                         |FROM_LEFT_3RD_BUTTON_PRESSED - The third button from the left.
+;                                         |FROM_LEFT_4TH_BUTTON_PRESSED - The fourth button from the left.
+;                                         |RIGHTMOST_BUTTON_PRESSED - The rightmost mouse button.
+;                  ControlKeyState      - The state of the control keys. This member can be one or more of the following values:
+;                                         |CAPSLOCK_ON - The CAPS LOCK light is on.
+;                                         |ENHANCED_KEY - The key is enhanced.
+;                                         |LEFT_ALT_PRESSED - The left ALT key is pressed.
+;                                         |LEFT_CTRL_PRESSED - The left CTRL key is pressed.
+;                                         |NUMLOCK_ON - The NUM LOCK light is on.
+;                                         |RIGHT_ALT_PRESSED - The right ALT key is pressed.
+;                                         |RIGHT_CTRL_PRESSED - The right CTRL key is pressed.
+;                                         |SCROLLLOCK_ON - The SCROLL LOCK light is on.
+;                                         |SHIFT_PRESSED - The SHIFT key is pressed.
+;                  EventFlags           - The type of mouse event. If this value is zero, it indicates a mouse button being
+;                                         pressed or released. Otherwise, this member is one of the following values.
+;                                         |DOUBLE_CLICK - The second click (button press) of a double-click occurred. The first
+;                                                         click is returned as a regular button-press event.
+;                                         |MOUSE_HWHEELED - The horizontal mouse wheel was moved. If the high word of the
+;                                                           ButtonState member contains a positive value, the wheel was rotated
+;                                                           to the right. Otherwise, the wheel was rotated to the left.
+;                                         |MOUSE_MOVED - A change in mouse position occurred.
+;                                         |MOUSE_WHEELED - The vertical mouse wheel was moved. If the high word of the
+;                                                          ButtonState member contains a positive value, the wheel was rotated
+;                                                          forward, away from the user. Otherwise, the wheel was rotated
+;                                                          backward, toward the user.
+; Author ........: Matt Diesel (Mat)
+; Remarks .......: Mouse events are placed in the input buffer when the console is in mouse mode (ENABLE_MOUSE_INPUT).
+;+
+;                  Mouse events are generated whenever the user moves the mouse, or presses or releases one of the mouse buttons.
+;                  Mouse events are placed in a console's input buffer only when the console group has the keyboard focus and the
+;                  cursor is within the borders of the console's window.
+; Related .......: _Console_ReadInputRecord, _Console_ReadInput, $tagINPUT_RECORD, $tagMOUSE_EVENT_RECORD
+; Link ..........: http://msdn.microsoft.com/en-us/library/ms683499
+; ===============================================================================================================================
+Global Const $tagINPUT_RECORD_MOUSE = "WORD EventType; STRUCT; " & $tagMOUSE_EVENT_RECORD & "ENDSTRUCT;"
+
+; #STRUCTURE# ===================================================================================================================
+; Name ..........: $tagINPUT_RECORD_SIZE
+; Description ...: Describes a change in the size of the console screen event in the console input buffer.
+; Fields ........: EventType            - A handle to the type of input event. This should be set to WINDOW_BUFFER_SIZE_EVENT if
+;                                         you are using this structure.
+;                  SizeX                - The width of the console screen buffer, in character cell columns.
+;                  SizeY                - The height of the console screen buffer, in character cell rows.
+; Author ........: Matt Diesel (Mat)
+; Remarks .......: Buffer size events are placed in the input buffer when the console is in window-aware mode
+;                  (ENABLE_WINDOW_INPUT).
+; Related .......: _Console_ReadInputRecord, _Console_ReadInput, $tagINPUT_RECORD, $tagWINDOW_BUFFER_SIZE_RECORD
+; Link ..........: http://msdn.microsoft.com/en-us/library/ms683499
+; ===============================================================================================================================
+Global Const $tagINPUT_RECORD_SIZE = "WORD EventType; STRUCT; " & $tagWINDOW_BUFFER_SIZE_RECORD & "BYTE[12]; ENDSTRUCT;"
+
+; #STRUCTURE# ===================================================================================================================
+; Name ..........: $tagINPUT_RECORD_MENU
+; Description ...: Describes a menu event in the console input buffer. These events are used internally and should be ignored.
+; Fields ........: EventType            - A handle to the type of input event. This should be set to MENU_EVENT if you are using
+;                                         this structure.
+;                  CommandId            - Reserved according to MSDN documentation. From testing it seems the only messages sent
+;                                         are menu opening (278) and menu closing (287). This is regardless of whether the
+;                                         console is window aware or not.
+; Author ........: Matt Diesel (Mat)
+; Remarks .......:
+; Related .......: _Console_ReadInputRecord, _Console_ReadInput, $tagINPUT_RECORD, $tagMENU_EVENT_RECORD
+; Link ..........: http://msdn.microsoft.com/en-us/library/ms683499
+; ===============================================================================================================================
+Global Const $tagINPUT_RECORD_MENU = "WORD EventType; STRUCT; " & $tagMENU_EVENT_RECORD & "BYTE[12]; ENDSTRUCT;"
+
+; #STRUCTURE# ===================================================================================================================
+; Name ..........: $tagINPUT_RECORD_FOCUS
+; Description ...: Describes a focus event in the console input buffer. These events are used internally and should be ignored.
+; Fields ........: EventType            - A handle to the type of input event. This should be set to FOCUS_EVENT if you are using
+;                                         this structure.
+;                  SetFocus             - Reserved according to MSDN. True if window is gaining focus, False if it is losing
+;                                         focus.
+; Author ........: Matt Diesel (Mat)
+; Remarks .......:
+; Related .......: _Console_ReadInputRecord, _Console_ReadInput, $tagINPUT_RECORD, $tagFOCUS_EVENT_RECORD
+; Link ..........: http://msdn.microsoft.com/en-us/library/ms683499
+; ===============================================================================================================================
+Global Const $tagINPUT_RECORD_FOCUS = "WORD EventType; STRUCT; " & $tagFOCUS_EVENT_RECORD & "BYTE[12]; ENDSTRUCT;"
+
+; #STRUCTURE# ===================================================================================================================
+; Name ..........: $tagSMALL_RECT
 ; Description ...: Defines the coordinates of the upper left and lower right corners of a rectangle.
 ; Fields ........: Left                 - The x-coordinate of the upper left corner of the rectangle.
 ;                  Top                  - The y-coordinate of the upper left corner of the rectangle.
@@ -725,10 +953,13 @@ Global Const $tagINPUT_RECORD_FOCUS = "WORD EventType; STRUCT; " & $tagFOCUS_EVE
 ; ===============================================================================================================================
 Global Const $tagSMALL_RECT = "SHORT Left; SHORT Top; SHORT Right; SHORT Bottom;"
 
+
+
+
 ; #FUNCTION# ====================================================================================================================
-; Name...........: _Console_AddAlias
+; Name ..........: _Console_AddAlias
 ; Description ...: Defines a console alias for the specified executable.
-; Syntax.........: _Console_AddAlias($sSource, $sTarget, $sExeName [, $hDll ] )
+; Syntax ........: _Console_AddAlias($sSource, $sTarget, $sExeName [, $hDll ] )
 ; Parameters ....: $sSource             - The console alias to be mapped to the text specified by Target.
 ;                  $sTarget             - The text to be substituted for Source. If this parameter is 0, then the console alias
 ;                                         is removed.
@@ -740,7 +971,7 @@ Global Const $tagSMALL_RECT = "SHORT Left; SHORT Top; SHORT Right; SHORT Bottom;
 ; Return values .: Success              - True
 ;                  Failure              - False
 ; Author ........: Matt Diesel (Mat)
-; Modified.......:
+; Modified ......:
 ; Remarks .......: Console aliases allow programs to define macros for commonly used commands. For example if you frequently need
 ;                  to use "cd \a_very_long_path\test" in cmd.exe you can shorten this to just "test" by calling:
 ;                  _Console_AddAlias("cd \a_very_long_path\test", "test", "cmd.exe")
@@ -763,15 +994,15 @@ Func _Console_AddAlias($sSource, $sTarget, $sExeName = Default, $fUnicode = Defa
 EndFunc   ;==>_Console_AddAlias
 
 ; #FUNCTION# ====================================================================================================================
-; Name...........: _Console_Alloc
+; Name ..........: _Console_Alloc
 ; Description ...: Allocates a new console for the calling process.
-; Syntax.........: _Console_Alloc( [ $hDll ] )
+; Syntax ........: _Console_Alloc( [ $hDll ] )
 ; Parameters ....: $hDll                - A handle to a dll to use. This prevents constant opening of the dll which could slow it
 ;                                         down. If you are calling lots of functions from the same dll then this recommended.
 ; Return values .: Success              - True
 ;                  Failure              - False
 ; Author ........: Matt Diesel (Mat)
-; Modified.......:
+; Modified ......:
 ; Remarks .......: This function is primarily used by graphical user interface (GUI) application to create a console window. Note
 ;                  that AutoIt's internal ConsoleWrite function will not write to this console, you must use the
 ;                  _Console_WriteConsole function instead.
@@ -790,9 +1021,9 @@ Func _Console_Alloc($hDll = -1)
 EndFunc   ;==>_Console_Alloc
 
 ; #FUNCTION# ====================================================================================================================
-; Name...........: _Console_Attach
+; Name ..........: _Console_Attach
 ; Description ...: Attaches the calling process to the console of the specified process.
-; Syntax.........: _Console_Attach( [$iProcessID [, $hDll ]] )
+; Syntax ........: _Console_Attach( [$iProcessID [, $hDll ]] )
 ; Parameters ....: $iProcessID          - Identifier of the process. Set to -1 (default) to use the console of the parent of the
 ;                                         current process.
 ;                  $hDll                - A handle to a dll to use. This prevents constant opening of the dll which could slow it
@@ -800,7 +1031,7 @@ EndFunc   ;==>_Console_Alloc
 ; Return values .: Success              - True
 ;                  Failure              - False
 ; Author ........: Matt Diesel (Mat)
-; Modified.......:
+; Modified ......:
 ; Remarks .......: Requires Windows XP.
 ; Related .......:
 ; Link ..........: http://msdn.microsoft.com/en-us/library/ms681952.aspx
@@ -817,9 +1048,9 @@ Func _Console_Attach($iProcessID = -1, $hDll = -1)
 EndFunc   ;==>_Console_Attach
 
 ; #FUNCTION# ====================================================================================================================
-; Name...........: _Console_CreateScreenBuffer
+; Name ..........: _Console_CreateScreenBuffer
 ; Description ...: Creates a console screen buffer.
-; Syntax.........: _Console_CreateScreenBuffer( [ $iDesiredAccess [, $iShareMode [, $hDll ]]] )
+; Syntax ........: _Console_CreateScreenBuffer( [ $iDesiredAccess [, $iShareMode [, $hDll ]]] )
 ; Parameters ....: $iDesiredAccess      - The access to the console screen buffer
 ;                  $iShareMode          - This parameter can be zero, indicating that the buffer cannot be shared, or it can be
 ;                                         one or more of the following values:
@@ -832,7 +1063,7 @@ EndFunc   ;==>_Console_Attach
 ; Return values .: Success              - A handle to the new console screen buffer.
 ;                  Failure              - zero
 ; Author ........: Matt Diesel (Mat)
-; Modified.......:
+; Modified ......:
 ; Remarks .......: FILE_SHARE_* constants are defined in FileConstants.au3. $tagSECURITY_ATTRIBUTES is defined in
 ;                  StructureConstants.au3
 ; Related .......: _Console_CloseHandle, _Console_DuplicateHandle, _Console_GetScreenBufferInfo,
@@ -857,10 +1088,10 @@ Func _Console_CreateScreenBuffer($iDesiredAccess = -1, $iShareMode = -1, $hDll =
 EndFunc   ;==>_Console_CreateScreenBuffer
 
 ; #FUNCTION# ====================================================================================================================
-; Name...........: _Console_FillOutputAttribute
+; Name ..........: _Console_FillOutputAttribute
 ; Description ...: Sets the character attributes for a specified number of character cells, beginning at the specified
 ;                  coordinates in a screen buffer.
-; Syntax.........: _Console_FillOutputAttribute($hConsoleOutput, $iAttribute, $nLength, $iX, $iY [, $hDll ] )
+; Syntax ........: _Console_FillOutputAttribute($hConsoleOutput, $iAttribute, $nLength, $iX, $iY [, $hDll ] )
 ; Parameters ....: $hConsoleOutput      - A handle to the console screen buffer. The handle must have the GENERIC_WRITE access
 ;                                         right.
 ;                  $iAttribute          - The attributes to use when writing to the console screen buffer.
@@ -890,7 +1121,7 @@ EndFunc   ;==>_Console_CreateScreenBuffer
 ;                                         @extended.
 ;                  Failure              - False
 ; Author ........: Matt Diesel (Mat)
-; Modified.......:
+; Modified ......:
 ; Remarks .......:
 ; Related .......:
 ; Link ..........: http://msdn.microsoft.com/en-us/library/ms682662.aspx
@@ -912,9 +1143,9 @@ Func _Console_FillOutputAttribute($hConsoleOutput, $iAttribute, $nLength, $iX, $
 EndFunc   ;==>_Console_FillOutputAttribute
 
 ; #FUNCTION# ====================================================================================================================
-; Name...........: _Console_FillOutputCharacter
+; Name ..........: _Console_FillOutputCharacter
 ; Description ...: Writes a character to the console screen buffer a specified number of times.
-; Syntax.........: _Console_FillOutputCharacter($hConsoleOutput, $sCharacter, $nLength [, $iX [, $iY [, $fUnicode [, $hDll ]]]] )
+; Syntax ........: _Console_FillOutputCharacter($hConsoleOutput, $sCharacter, $nLength [, $iX [, $iY [, $fUnicode [, $hDll ]]]] )
 ; Parameters ....: $hConsoleOutput      - A handle to the console screen buffer. The handle must have the GENERIC_WRITE access
 ;                                         right.
 ;                  $sCharacter          - The character to be written to the console screen buffer.
@@ -930,7 +1161,7 @@ EndFunc   ;==>_Console_FillOutputAttribute
 ;                                         @extended
 ;                  Failure              - False
 ; Author ........: Matt Diesel (Mat)
-; Modified.......:
+; Modified ......:
 ; Remarks .......:
 ; Related .......:
 ; Link ..........: http://msdn.microsoft.com/en-us/library/ms682663.aspx
@@ -941,9 +1172,9 @@ Func _Console_FillOutputCharacter($hConsoleOutput, $sCharacter, $nLength, $iX = 
 	If $hDll = -1 Then $hDll = $__gvKernel32
 	If $hConsoleOutput = -1 Then $hConsoleOutput = _Console_GetStdHandle($STD_OUTPUT_HANDLE, $hDll)
 
-    Local $aResult = DllCall("kernel32.dll", "bool", "FillConsoleOutputCharacter" & ($fUnicode ? "W" : "A"), _
+	Local $aResult = DllCall("kernel32.dll", "bool", "FillConsoleOutputCharacter" & ($fUnicode ? "W" : "A"), _
 			"handle", $hConsoleOutput, _
-			"byte", IsString($sCharacter) ? ($fUnicode ? AscW($sCharacter) : Asc($sCharacter)) : $sCharacter, _
+			"byte", IsString($sCharacter) ?($fUnicode ? AscW($sCharacter) : Asc($sCharacter)) : $sCharacter, _
 			"dword", $nLength, _
 			"int", BitShift($iY, -16) + $iX, _
 			"dword*", 0)
@@ -953,9 +1184,9 @@ Func _Console_FillOutputCharacter($hConsoleOutput, $sCharacter, $nLength, $iX = 
 EndFunc   ;==>_Console_FillOutputCharacter
 
 ; #FUNCTION# ====================================================================================================================
-; Name...........: _Console_FlushInputBuffer
+; Name ..........: _Console_FlushInputBuffer
 ; Description ...: Flushes the console input buffer.
-; Syntax.........: _Console_FlushInputBuffer( [$hConsoleInput [, $hDll ]] )
+; Syntax ........: _Console_FlushInputBuffer( [$hConsoleInput [, $hDll ]] )
 ; Parameters ....: $hConsoleInput       - A handle to the console screen buffer. The handle must have the GENERIC_READ access
 ;                                         right.
 ;                  $hDll                - A handle to a dll to use. This prevents constant opening of the dll which could slow it
@@ -963,7 +1194,7 @@ EndFunc   ;==>_Console_FillOutputCharacter
 ; Return values .: Success              - True
 ;                  Failure              - False
 ; Author ........: Matt Diesel (Mat)
-; Modified.......:
+; Modified ......:
 ; Remarks .......: Sometimes key presses are sent to a console before a call to _Console_Read, causing odd result, such as rogue
 ;                  characters. Calling _Console_FlushInputBuffer before _Console_Read fixes this, but it has some performance
 ;                  issues, especially when dealing with mouse and window input.
@@ -983,15 +1214,15 @@ Func _Console_FlushInputBuffer($hConsoleInput = -1, $hDll = -1)
 EndFunc   ;==>_Console_FlushInputBuffer
 
 ; #FUNCTION# ====================================================================================================================
-; Name...........: _Console_Free
+; Name ..........: _Console_Free
 ; Description ...: Detaches the calling process from its console.
-; Syntax.........: _Console_Free( [ $hDll ] )
+; Syntax ........: _Console_Free( [ $hDll ] )
 ; Parameters ....: $hDll                - A handle to a dll to use. This prevents constant opening of the dll which could slow it
 ;                                         down. If you are calling lots of functions from the same dll then this recommended.
 ; Return values .: Success              - True
 ;                  Failure              - False
 ; Author ........: Matt Diesel (Mat)
-; Modified.......:
+; Modified ......:
 ; Remarks .......:
 ; Related .......: _Console_Alloc, _Console_GetProcessList
 ; Link ..........: http://msdn.microsoft.com/en-us/library/ms683150.aspx
@@ -1007,10 +1238,10 @@ Func _Console_Free($hDll = -1)
 EndFunc   ;==>_Console_Free
 
 ; #FUNCTION# ====================================================================================================================
-; Name...........: _Console_GenerateCtrlEvent
+; Name ..........: _Console_GenerateCtrlEvent
 ; Description ...: Sends a specified signal to a console process group that shares the console associated with the calling
 ;                  process.
-; Syntax.........: _Console_GenerateCtrlEvent($iCtrlEvent [, $iProcessGroupId [, $hDll ]] )
+; Syntax ........: _Console_GenerateCtrlEvent($iCtrlEvent [, $iProcessGroupId [, $hDll ]] )
 ; Parameters ....: $iCtrlEvent          - The type of signal to be generated. This parameter can be one of the following values:
 ;                                       |CTRL_C_EVENT - Generates a CTRL+C signal. This signal cannot be generated for process
 ;                                                       groups. If $iProcessGroupId is non-zero, this function will succeed, but
@@ -1031,7 +1262,7 @@ EndFunc   ;==>_Console_Free
 ; Return values .: Success              - True
 ;                  Failure              - False
 ; Author ........: Matt Diesel (Mat)
-; Modified.......:
+; Modified ......:
 ; Remarks .......:
 ; Related .......:
 ; Link ..........: http://msdn.microsoft.com/en-us/library/ms683155.aspx
@@ -1049,9 +1280,9 @@ Func _Console_GenerateCtrlEvent($iCtrlEvent, $iProcessGroupId = 0, $hDll = -1)
 EndFunc   ;==>_Console_GenerateCtrlEvent
 
 ; #FUNCTION# ====================================================================================================================
-; Name...........: _Console_GetAlias
+; Name ..........: _Console_GetAlias
 ; Description ...: Retrieves the specified alias for the specified executable.
-; Syntax.........: _Console_GetAlias($sSource [, $sExeName [, $fUnicode [, $hDll ]]] )
+; Syntax ........: _Console_GetAlias($sSource [, $sExeName [, $fUnicode [, $hDll ]]] )
 ; Parameters ....: $sSource             - The console alias whose text is to be retrieved.
 ;                  $sExeName            - The name of the executable file. The default is the current executable. Note that this
 ;                                         will be AutoIt3.exe if the program is not compiled.
@@ -1061,7 +1292,7 @@ EndFunc   ;==>_Console_GenerateCtrlEvent
 ; Return values .: Success              - The text associated with the console alias.
 ;                  Failure              - A blank string
 ; Author ........: Matt Diesel (Mat)
-; Modified.......:
+; Modified ......:
 ; Remarks .......:
 ; Related .......:
 ; Link ..........: http://msdn.microsoft.com/en-us/library/ms683157.aspx
@@ -1085,9 +1316,9 @@ Func _Console_GetAlias($sSource, $sExeName = -1, $fUnicode = Default, $hDll = -1
 EndFunc   ;==>_Console_GetAlias
 
 ; #FUNCTION# ====================================================================================================================
-; Name...........: _Console_GetAliases
+; Name ..........: _Console_GetAliases
 ; Description ...: Retrieves all defined console aliases for the specified executable.
-; Syntax.........: _Console_GetAliases( [$sExeName [, $fUnicode [, $hDll ]]] )
+; Syntax ........: _Console_GetAliases( [$sExeName [, $fUnicode [, $hDll ]]] )
 ; Parameters ....: $sExeName            - The executable file whose aliases are to be retrieved.
 ;                  $fUnicode            - If 'True' then the unicode version will be used. If 'False' then ANSI is used.
 ;                  $hDll                - A handle to a dll to use. This prevents constant opening of the dll which could slow it
@@ -1095,7 +1326,7 @@ EndFunc   ;==>_Console_GetAlias
 ; Return values .: Success              - An array containing the console aliases.
 ;                  Failure              - zero
 ; Author ........: Matt Diesel (Mat)
-; Modified.......:
+; Modified ......:
 ; Remarks .......:
 ; Related .......: _Console_GetAliasesLength
 ; Link ..........: http://msdn.microsoft.com/en-us/library/ms683158.aspx
@@ -1118,10 +1349,10 @@ Func _Console_GetAliases($sExeName = -1, $fUnicode = Default, $hDll = -1)
 EndFunc   ;==>_Console_GetAliases
 
 ; #FUNCTION# ====================================================================================================================
-; Name...........: _Console_GetAliasesLength
+; Name ..........: _Console_GetAliasesLength
 ; Description ...: Returns the size, in bytes, of the buffer needed to store all of the console aliases for the specified
 ;                  executable.
-; Syntax.........: _Console_GetAliasesLength( [$sExeName [, $fUnicode [, $hDll ]]] )
+; Syntax ........: _Console_GetAliasesLength( [$sExeName [, $fUnicode [, $hDll ]]] )
 ; Parameters ....: $sExeName            - The executable file whose aliases are to be retrieved.
 ;                  $fUnicode            - If 'True' then the unicode version will be used. If 'False' then ANSI is used.
 ;                  $hDll                - A handle to a dll to use. This prevents constant opening of the dll which could slow it
@@ -1129,7 +1360,7 @@ EndFunc   ;==>_Console_GetAliases
 ; Return values .: Success              - The size, in characters, of the buffer needed to store all of the console aliases.
 ;                  Failure              - zero
 ; Author ........: Matt Diesel (Mat)
-; Modified.......:
+; Modified ......:
 ; Remarks .......:
 ; Related .......: _Console_GetAliases
 ; Link ..........: http://msdn.microsoft.com/en-us/library/ms683159.aspx
@@ -1149,16 +1380,16 @@ Func _Console_GetAliasesLength($sExeName = -1, $fUnicode = Default, $hDll = -1)
 EndFunc   ;==>_Console_GetAliasesLength
 
 ; #FUNCTION# ====================================================================================================================
-; Name...........: _Console_GetAliasExes
+; Name ..........: _Console_GetAliasExes
 ; Description ...: Retrieves the names of all executables with console aliases defined.
-; Syntax.........: _Console_GetAliasExes( [ $fUnicode [, $hDll ]] )
+; Syntax ........: _Console_GetAliasExes( [ $fUnicode [, $hDll ]] )
 ; Parameters ....: $fUnicode            - If 'True' then the unicode version will be used. If 'False' then ANSI is used.
 ;                  $hDll                - A handle to a dll to use. This prevents constant opening of the dll which could slow it
 ;                                         down. If you are calling lots of functions from the same dll then this recommended.
 ; Return values .: Success              - A string containing the exes.
 ;                  Failure              - A blank string
 ; Author ........: Matt Diesel (Mat)
-; Modified.......:
+; Modified ......:
 ; Remarks .......:
 ; Related .......:
 ; Link ..........: http://msdn.microsoft.com/en-us/library/ms683160.aspx
@@ -1179,17 +1410,17 @@ Func _Console_GetAliasExes($fUnicode = Default, $hDll = -1)
 EndFunc   ;==>_Console_GetAliasExes
 
 ; #FUNCTION# ====================================================================================================================
-; Name...........: _Console_GetAliasExesLength
+; Name ..........: _Console_GetAliasExesLength
 ; Description ...: Returns the size, in bytes, of the buffer needed to store the names of all executables that have console
 ;                  aliases defined.
-; Syntax.........: _Console_GetAliasExesLength( [ $fUnicode [, $hDll ]] )
+; Syntax ........: _Console_GetAliasExesLength( [ $fUnicode [, $hDll ]] )
 ; Parameters ....: $fUnicode            - If 'True' then the unicode version will be used. If 'False' then ANSI is used.
 ;                  $hDll                - A handle to a dll to use. This prevents constant opening of the dll which could slow it
 ;                                         down. If you are calling lots of functions from the same dll then this recommended.
 ; Return values .: The size of the buffer required to store the names of all executable files that have console aliases defined,
 ;                  in characters.
 ; Author ........: Matt Diesel (Mat)
-; Modified.......:
+; Modified ......:
 ; Remarks .......:
 ; Related .......:
 ; Link ..........: http://msdn.microsoft.com/en-us/library/ms683161.aspx
@@ -1207,15 +1438,15 @@ Func _Console_GetAliasExesLength($fUnicode = Default, $hDll = -1)
 EndFunc   ;==>_Console_GetAliasExesLength
 
 ; #FUNCTION# ====================================================================================================================
-; Name...........: _Console_GetCP
+; Name ..........: _Console_GetCP
 ; Description ...: Retrieves the input code page used by the console associated with the calling process.
-; Syntax.........: _Console_GetCP( [ $hDll ] )
+; Syntax ........: _Console_GetCP( [ $hDll ] )
 ; Parameters ....: $hDll                - A handle to a dll to use. This prevents constant opening of the dll which could slow it
 ;                                         down. If you are calling lots of functions from the same dll then this recommended.
 ; Return values .: A code that identifies the code page. See http://msdn.microsoft.com/en-us/library/dd317756.aspx
 ;                  for possible values.
 ; Author ........: Matt Diesel (Mat)
-; Modified.......:
+; Modified ......:
 ; Remarks .......: A code page maps 256 character codes to individual characters. Different code pages include different special
 ;                  characters, typically customized for a language or a group of languages. To retrieve more information about
 ;                  a code page, including it's name, see the _Console_GetCPInfoEx function.
@@ -1233,9 +1464,9 @@ Func _Console_GetCP($hDll = -1)
 EndFunc   ;==>_Console_GetCP
 
 ; #FUNCTION# ====================================================================================================================
-; Name...........: _Console_GetCursorInfo
+; Name ..........: _Console_GetCursorInfo
 ; Description ...: Retrieves information about the size and visibility of the cursor for the specified console screen buffer.
-; Syntax.........: _Console_GetCursorInfo( [$hConsoleOutput [, $hDll ]] )
+; Syntax ........: _Console_GetCursorInfo( [$hConsoleOutput [, $hDll ]] )
 ; Parameters ....: $hConsoleOutput      - A handle to the console screen buffer. The handle must have the GENERIC_READ access
 ;                                         right.
 ;                  $hDll                - A handle to a dll to use. This prevents constant opening of the dll which could slow it
@@ -1243,7 +1474,7 @@ EndFunc   ;==>_Console_GetCP
 ; Return values .: Success              - A CONSOLE_CURSOR_INFO structure with the information.
 ;                  Failure              - zero
 ; Author ........: Matt Diesel (Mat)
-; Modified.......:
+; Modified ......:
 ; Remarks .......:
 ; Related .......: _Console_GetCursorSize, _Console_GetCursorVisible
 ; Link ..........: http://msdn.microsoft.com/en-us/library/ms683163.aspx
@@ -1339,9 +1570,9 @@ Func _Console_GetCursorVisible($hConsole = -1, $hDll = -1)
 EndFunc   ;==>_Console_GetCursorVisible
 
 ; #FUNCTION# ====================================================================================================================
-; Name...........: _Console_GetCurrentFont
+; Name ..........: _Console_GetCurrentFont
 ; Description ...: Retrieves information about the current console font.
-; Syntax.........: _Console_GetCurrentFont( [$hConsoleOutput [, $fMaximumWindow [, $hDll ]]] )
+; Syntax ........: _Console_GetCurrentFont( [$hConsoleOutput [, $fMaximumWindow [, $hDll ]]] )
 ; Parameters ....: $hConsoleOutput      - A handle to the console screen buffer. The handle must have the GENERIC_READ access
 ;                                         right.
 ;                  $fMaximumWindow      - If this parameter is TRUE, font information is retrieved for the maximum window size.
@@ -1352,7 +1583,7 @@ EndFunc   ;==>_Console_GetCursorVisible
 ; Return values .: Success              - A CONSOLE_FONT_INFO structure that has the requested font information.
 ;                  Failure              - zero
 ; Author ........: Matt Diesel (Mat)
-; Modified.......:
+; Modified ......:
 ; Remarks .......:
 ; Related .......:
 ; Link ..........: http://msdn.microsoft.com/en-us/library/ms683176.aspx
@@ -1374,9 +1605,9 @@ Func _Console_GetCurrentFont($hConsoleOutput = -1, $fMaximumWindow = False, $hDl
 EndFunc   ;==>_Console_GetCurrentFont
 
 ; #FUNCTION# ====================================================================================================================
-; Name...........: _Console_GetCurrentFontEx
+; Name ..........: _Console_GetCurrentFontEx
 ; Description ...: Retrieves extended information about the current console font.
-; Syntax.........: _Console_GetCurrentFontEx( [$hConsoleOutput [, $fMaximumWindow [, $hDll ]]] )
+; Syntax ........: _Console_GetCurrentFontEx( [$hConsoleOutput [, $fMaximumWindow [, $hDll ]]] )
 ; Parameters ....: $hConsoleOutput      - A handle to the console screen buffer. The handle must have the GENERIC_READ access
 ;                                         right.
 ;                  $fMaximumWindow      - If this parameter is TRUE, font information is retrieved for the maximum window size.
@@ -1386,7 +1617,7 @@ EndFunc   ;==>_Console_GetCurrentFont
 ; Return values .: Success              - A CONSOLE_FONT_INFOEX structure that has the requested font information.
 ;                  Failure              - zero
 ; Author ........: Matt Diesel (Mat)
-; Modified.......:
+; Modified ......:
 ; Remarks .......:
 ; Related .......:
 ; Link ..........: http://msdn.microsoft.com/en-us/library/ms683177.aspx
@@ -1547,9 +1778,9 @@ Func _Console_GetCurrentFontWeight($hConsoleOutput = -1, $fMaximumWindow = False
 EndFunc   ;==>_Console_GetCurrentFontWeight
 
 ; #FUNCTION# ====================================================================================================================
-; Name...........: _Console_GetDisplayMode
+; Name ..........: _Console_GetDisplayMode
 ; Description ...: Retrieves the display mode of the current console.
-; Syntax.........: _Console_GetDisplayMode( [ $hDll ] )
+; Syntax ........: _Console_GetDisplayMode( [ $hDll ] )
 ; Parameters ....: $hDll                - A handle to a dll to use. This prevents constant opening of the dll which could slow it
 ;                                         down. If you are calling lots of functions from the same dll then this recommended.
 ; Return values .: Success              - The display mode of the console. This can be one or more of the following values:
@@ -1562,7 +1793,7 @@ EndFunc   ;==>_Console_GetCurrentFontWeight
 ;                                                                      to full-screen mode has completed.
 ;                  Failure              - zero
 ; Author ........: Matt Diesel (Mat)
-; Modified.......:
+; Modified ......:
 ; Remarks .......:
 ; Related .......:
 ; Link ..........: http://msdn.microsoft.com/en-us/library/ms683164.aspx
@@ -1579,9 +1810,9 @@ Func _Console_GetDisplayMode($hDll = -1)
 EndFunc   ;==>_Console_GetDisplayMode
 
 ; #FUNCTION# ====================================================================================================================
-; Name...........: _Console_GetFontSize
+; Name ..........: _Console_GetFontSize
 ; Description ...: Retrieves the size of the font used by the specified console screen buffer.
-; Syntax.........: _Console_GetFontSize( [$hConsoleOutput [, $hDll ]] )
+; Syntax ........: _Console_GetFontSize( [$hConsoleOutput [, $hDll ]] )
 ; Parameters ....: $hConsoleOutput      - A handle to the console screen buffer. The handle must have the GENERIC_READ access
 ;                                         right. Default is the running process' console screen buffer.
 ;                  $hDll                - A handle to a dll to use. This prevents constant opening of the dll which could slow it
@@ -1591,7 +1822,7 @@ EndFunc   ;==>_Console_GetDisplayMode
 ;                                       |[1] - the height of each character in the font, in logical units
 ;                  Failure              - zero
 ; Author ........: Matt Diesel (Mat)
-; Modified.......:
+; Modified ......:
 ; Remarks .......:
 ; Related .......:
 ; Link ..........: http://msdn.microsoft.com/en-us/library/ms683165.aspx
@@ -1657,15 +1888,15 @@ Func _Console_GetHistoryDuplicates($hDll = -1)
 EndFunc   ;==>_Console_GetHistoryDuplicates
 
 ; #FUNCTION# ====================================================================================================================
-; Name...........: _Console_GetHistoryInfo
+; Name ..........: _Console_GetHistoryInfo
 ; Description ...: Retrieves the history settings for the calling process's console.
-; Syntax.........: _Console_GetHistoryInfo( [ $hDll ] )
+; Syntax ........: _Console_GetHistoryInfo( [ $hDll ] )
 ; Parameters ....: $hDll                - A handle to a dll to use. This prevents constant opening of the dll which could slow it
 ;                                         down. If you are calling lots of functions from the same dll then this recommended.
 ; Return values .: Success              - A CONSOLE_HISTORY_INFO structure.
 ;                  Failure              - 0
 ; Author ........: Matt Diesel (Mat)
-; Modified.......:
+; Modified ......:
 ; Remarks .......:
 ; Related .......: _Console_GetHistoryBufferSize, _Console_GetHistoryNumberOfBuffers, _Console_GetHistoryDuplicates
 ; Link ..........: http://msdn.microsoft.com/en-us/library/ms683166.aspx
@@ -1707,9 +1938,9 @@ Func _Console_GetHistoryNumberOfBuffers($hDll = -1)
 EndFunc   ;==>_Console_GetHistoryNumberOfBuffers
 
 ; #FUNCTION# ====================================================================================================
-; Name...........: _Console_GetInput
+; Name ..........: _Console_GetInput
 ; Description....: Get user input from the console
-; Syntax.........: _Console_GetInput( [
+; Syntax ........: _Console_GetInput( [
 ;                          $sPrompt [,
 ;                          $iLen [,
 ;                          $autoReturn [,
@@ -1733,21 +1964,21 @@ EndFunc   ;==>_Console_GetHistoryNumberOfBuffers
 ; Return values..: Success - Input string
 ;                  Failure - Empty string
 ; Author.........: Erik Pilsits (Wraithdu)
-; Modified.......:
+; Modified ......:
 ; Remarks........:
 ; Related........:
 ; Link...........:
 ; Example........:
 ; ===============================================================================================================
 Func _Console_GetInput($sPrompt = "", _
-			$iLen = 0, _
-			$autoReturn = False, _
-			$validateEach = "", _
-			$validateFinal = "", _
-			$hideInput = False, _
-			$maskChar = "", _
-			$fUnicode = Default, _
-			$hDll = -1)
+		$iLen = 0, _
+		$autoReturn = False, _
+		$validateEach = "", _
+		$validateFinal = "", _
+		$hideInput = False, _
+		$maskChar = "", _
+		$fUnicode = Default, _
+		$hDll = -1)
 	$iLen = Abs($iLen)
 	$maskChar = StringLeft($maskChar, 1)
 	If $sPrompt <> "" Then _Console_Write($sPrompt, $fUnicode, $hDll)
@@ -1830,9 +2061,9 @@ Func _Console_GetInput($sPrompt = "", _
 EndFunc   ;==>_Console_GetInput
 
 ; #FUNCTION# ====================================================================================================================
-; Name...........: _Console_GetLargestWindowSize
+; Name ..........: _Console_GetLargestWindowSize
 ; Description ...: Retrieves the size of the largest possible console window.
-; Syntax.........: _Console_GetLargestWindowSize( [$hConsoleOutput [, $hDll ]] )
+; Syntax ........: _Console_GetLargestWindowSize( [$hConsoleOutput [, $hDll ]] )
 ; Parameters ....: $hConsoleOutput      - A handle to the console screen buffer. The handle must have the GENERIC_READ access
 ;                                         right.
 ;                  $hDll                - A handle to a dll to use. This prevents constant opening of the dll which could slow it
@@ -1842,7 +2073,7 @@ EndFunc   ;==>_Console_GetInput
 ;                                       |[1] - The height of the largest possible console window.
 ;                  Failure              - zero
 ; Author ........: Matt Diesel (Mat)
-; Modified.......:
+; Modified ......:
 ; Remarks .......:
 ; Related .......:
 ; Link ..........: http://msdn.microsoft.com/en-us/library/ms683193.aspx
@@ -1861,10 +2092,10 @@ Func _Console_GetLargestWindowSize($hConsoleOutput = -1, $hDll = -1)
 EndFunc   ;==>_Console_GetLargestWindowSize
 
 ; #FUNCTION# ====================================================================================================================
-; Name...........: _Console_GetMode
+; Name ..........: _Console_GetMode
 ; Description ...: Retrieves the current input mode of a console's input buffer or the current output mode of a console screen
 ;                  buffer.
-; Syntax.........: _Console_GetMode( [$hConsoleHandle [, $hDll ]] )
+; Syntax ........: _Console_GetMode( [$hConsoleHandle [, $hDll ]] )
 ; Parameters ....: $hConsoleHandle      - A handle to the console input buffer or the console screen buffer. The handle must
 ;                                         have the GENERIC_READ access right. Default is the running process' console screen
 ;                                         buffer.
@@ -1925,7 +2156,7 @@ EndFunc   ;==>_Console_GetLargestWindowSize
 ;                                                                   row is overwritten with any subsequent characters.
 ;                  Failure              - 0
 ; Author ........: Matt Diesel (Mat)
-; Modified.......:
+; Modified ......:
 ; Remarks .......:
 ; Related .......:
 ; Link ..........: http://msdn.microsoft.com/en-us/library/ms683167.aspx
@@ -1944,9 +2175,9 @@ Func _Console_GetMode($hConsoleHandle = -1, $hDll = -1)
 EndFunc   ;==>_Console_GetMode
 
 ; #FUNCTION# ====================================================================================================================
-; Name...........: _Console_GetNumberOfInputEvents
+; Name ..........: _Console_GetNumberOfInputEvents
 ; Description ...: Retrieves the number of unread input records in the console's input buffer.
-; Syntax.........: _Console_GetNumberOfInputEvents( [$hConsoleInput [, $hDll ]] )
+; Syntax ........: _Console_GetNumberOfInputEvents( [$hConsoleInput [, $hDll ]] )
 ; Parameters ....: $hConsoleInput       - A handle to the console screen buffer. The handle must have the GENERIC_READ access
 ;                                         right.
 ;                  $hDll                - A handle to a dll to use. This prevents constant opening of the dll which could slow it
@@ -1954,7 +2185,7 @@ EndFunc   ;==>_Console_GetMode
 ; Return values .: Success              - The number of unread input records in the console's input buffer.
 ;                  Failure              - zero
 ; Author ........: Matt Diesel (Mat)
-; Modified.......:
+; Modified ......:
 ; Remarks .......:
 ; Related .......:
 ; Link ..........: http://msdn.microsoft.com/en-us/library/ms683207.aspx
@@ -1973,15 +2204,15 @@ Func _Console_GetNumberOfInputEvents($hConsoleInput = -1, $hDll = -1)
 EndFunc   ;==>_Console_GetNumberOfInputEvents
 
 ; #FUNCTION# ====================================================================================================================
-; Name...........: _Console_GetNumberOfMouseButtons
+; Name ..........: _Console_GetNumberOfMouseButtons
 ; Description ...: Retrieves the number of buttons on the mouse used by the current console.
-; Syntax.........: _Console_GetNumberOfMouseButtons( [ $hDll ] )
+; Syntax ........: _Console_GetNumberOfMouseButtons( [ $hDll ] )
 ; Parameters ....: $hDll                - A handle to a dll to use. This prevents constant opening of the dll which could slow it
 ;                                         down. If you are calling lots of functions from the same dll then this recommended.
 ; Return values .: Success              - The number of buttons on the mouse used by the current console.
 ;                  Failure              - zero
 ; Author ........: Matt Diesel (Mat)
-; Modified.......:
+; Modified ......:
 ; Remarks .......:
 ; Related .......:
 ; Link ..........: http://msdn.microsoft.com/en-us/library/ms683208.aspx
@@ -1998,16 +2229,16 @@ Func _Console_GetNumberOfMouseButtons($hDll = -1)
 EndFunc   ;==>_Console_GetNumberOfMouseButtons
 
 ; #FUNCTION# ====================================================================================================================
-; Name...........: _Console_GetOriginalTitle
+; Name ..........: _Console_GetOriginalTitle
 ; Description ...: Retrieves the original title for the current console window.
-; Syntax.........: _Console_GetOriginalTitle( [ $fUnicode [, $hDll ]] )
+; Syntax ........: _Console_GetOriginalTitle( [ $fUnicode [, $hDll ]] )
 ; Parameters ....: $fUnicode            - If 'True' then the unicode version will be used. If 'False' then ANSI is used.
 ;                  $hDll                - A handle to a dll to use. This prevents constant opening of the dll which could slow it
 ;                                         down. If you are calling lots of functions from the same dll then this recommended.
 ; Return values .: Success              - A string containing the original title for the current console window.
 ;                  Failure              - A blank string
 ; Author ........: Matt Diesel (Mat)
-; Modified.......:
+; Modified ......:
 ; Remarks .......: To set the title for a console window, use the _Console_SetTitle function. To retrieve the current
 ;                  title string, use the _Console_GetTitle function.
 ; Related .......: _Console_SetTitle, _Console_GetTitle
@@ -2029,15 +2260,15 @@ Func _Console_GetOriginalTitle($fUnicode = Default, $hDll = -1)
 EndFunc   ;==>_Console_GetOriginalTitle
 
 ; #FUNCTION# ====================================================================================================================
-; Name...........: _Console_GetOutputCP
+; Name ..........: _Console_GetOutputCP
 ; Description ...: Retrieves the output code page used by the console associated with the calling process.
-; Syntax.........: _Console_GetOutputCP( [ $hDll ] )
+; Syntax ........: _Console_GetOutputCP( [ $hDll ] )
 ; Parameters ....: $hDll                - A handle to a dll to use. This prevents constant opening of the dll which could slow it
 ;                                         down. If you are calling lots of functions from the same dll then this recommended.
 ; Return values .: A code that identifies the code page. See http://msdn.microsoft.com/en-us/library/dd317756(v=VS.85).aspx
 ;                  for possible values.
 ; Author ........: Matt Diesel (Mat)
-; Modified.......:
+; Modified ......:
 ; Remarks .......: A code page maps 256 character codes to individual characters. Different code pages include different special
 ;                  characters, typically customized for a language or a group of languages. To retrieve more information about a
 ;                  code page, including it's name, see the GetCPInfoEx function.
@@ -2055,15 +2286,15 @@ Func _Console_GetOutputCP($hDll = -1)
 EndFunc   ;==>_Console_GetOutputCP
 
 ; #FUNCTION# ====================================================================================================================
-; Name...........: _Console_GetProcessList
+; Name ..........: _Console_GetProcessList
 ; Description ...: Retrieves a list of the processes attached to the current console.
-; Syntax.........: _Console_GetProcessList( [ $hDll ] )
+; Syntax ........: _Console_GetProcessList( [ $hDll ] )
 ; Parameters ....: $hDll                - A handle to a dll to use. This prevents constant opening of the dll which could slow it
 ;                                         down. If you are calling lots of functions from the same dll then this recommended.
 ; Return values .: Success              - An array of PID's of the processes attached to the current console.
 ;                  Failure              - zero
 ; Author ........: Matt Diesel (Mat)
-; Modified.......:
+; Modified ......:
 ; Remarks .......:
 ; Related .......:
 ; Link ..........: http://msdn.microsoft.com/en-us/library/ms683170.aspx
@@ -2100,9 +2331,9 @@ Func _Console_GetProcessList($hDll = -1)
 EndFunc   ;==>_Console_GetProcessList
 
 ; #FUNCTION# ====================================================================================================================
-; Name...........: _Console_GetScreenBufferAttributes
+; Name ..........: _Console_GetScreenBufferAttributes
 ; Description ...: Retrieves the attributes of the specified console screen buffer.
-; Syntax.........: _Console_GetScreenBufferAttributes( [ $hConsoleOutput [, $hDll ]] )
+; Syntax ........: _Console_GetScreenBufferAttributes( [ $hConsoleOutput [, $hDll ]] )
 ; Parameters ....: $hConsoleOutput      - A handle to the console screen buffer. The handle must have the GENERIC_READ access
 ;                                         right.
 ;                  $hDll                - A handle to a dll to use. This prevents constant opening of the dll which could slow it
@@ -2126,7 +2357,7 @@ EndFunc   ;==>_Console_GetProcessList
 ;                                       |COMMON_LVB_UNDERSCORE - Underscore.
 ;                  Failure              - Zero and sets the @Error flag.
 ; Author ........: Matt Diesel (Mat)
-; Modified.......:
+; Modified ......:
 ; Remarks .......:
 ; Related .......: _Console_GetScreenBufferInfo
 ; Link ..........:
@@ -2140,9 +2371,9 @@ Func _Console_GetScreenBufferAttributes($hConsoleOutput = -1, $hDll = -1)
 EndFunc   ;==>_Console_GetScreenBufferAttributes
 
 ; #FUNCTION# ====================================================================================================================
-; Name...........: _Console_GetScreenBufferColorTable
+; Name ..........: _Console_GetScreenBufferColorTable
 ; Description ...: Retrieves the specified console screen buffer's color settings.
-; Syntax.........: _Console_GetScreenBufferColorTable( [ $hConsoleOutput [, $hDll ]] )
+; Syntax ........: _Console_GetScreenBufferColorTable( [ $hConsoleOutput [, $hDll ]] )
 ; Parameters ....: $hConsoleOutput      - A handle to the console screen buffer. The handle must have the GENERIC_READ access
 ;                                         right.
 ;                  $hDll                - A handle to a dll to use. This prevents constant opening of the dll which could slow it
@@ -2150,7 +2381,7 @@ EndFunc   ;==>_Console_GetScreenBufferAttributes
 ; Return values .: Success              - Returns a 16-element array containing the COLORREF (BGR!) values used in the console.
 ;                  Failure              - False and sets the @Error flag.
 ; Author ........: Matt Diesel (Mat)
-; Modified.......:
+; Modified ......:
 ; Remarks .......:
 ; Related .......: _Console_GetScreenBufferInfoEx
 ; Link ..........:
@@ -2169,9 +2400,9 @@ Func _Console_GetScreenBufferColorTable($hConsoleOutput = -1, $hDll = -1)
 EndFunc   ;==>_Console_GetScreenBufferColorTable
 
 ; #FUNCTION# ====================================================================================================================
-; Name...........: _Console_GetScreenBufferFullscreen
+; Name ..........: _Console_GetScreenBufferFullscreen
 ; Description ...: Retrieves whether fullscreen mode is allowed for the specified console screen buffer.
-; Syntax.........: _Console_GetScreenBufferFullscreen( [ $hConsoleOutput [, $hDll ]] )
+; Syntax ........: _Console_GetScreenBufferFullscreen( [ $hConsoleOutput [, $hDll ]] )
 ; Parameters ....: $hConsoleOutput      - A handle to the console screen buffer. The handle must have the GENERIC_READ access
 ;                                         right.
 ;                  $hDll                - A handle to a dll to use. This prevents constant opening of the dll which could slow it
@@ -2179,7 +2410,7 @@ EndFunc   ;==>_Console_GetScreenBufferColorTable
 ; Return values .: Success              - Returns True if fullscreen mode is allowed, False otherwise.
 ;                  Failure              - False and sets the @Error flag.
 ; Author ........: Matt Diesel (Mat)
-; Modified.......:
+; Modified ......:
 ; Remarks .......:
 ; Related .......: _Console_GetScreenBufferInfoEx
 ; Link ..........:
@@ -2193,9 +2424,9 @@ Func _Console_GetScreenBufferFullscreen($hConsoleOutput = -1, $hDll = -1)
 EndFunc   ;==>_Console_GetScreenBufferFullscreen
 
 ; #FUNCTION# ====================================================================================================================
-; Name...........: _Console_GetScreenBufferInfo
+; Name ..........: _Console_GetScreenBufferInfo
 ; Description ...: Retrieves information about the specified console screen buffer.
-; Syntax.........: _Console_GetScreenBufferInfo( [ $hConsoleOutput [, $hDll ]] )
+; Syntax ........: _Console_GetScreenBufferInfo( [ $hConsoleOutput [, $hDll ]] )
 ; Parameters ....: $hConsoleOutput      - A handle to the console screen buffer. The handle must have the GENERIC_READ access
 ;                                         right.
 ;                  $hDll                - A handle to a dll to use. This prevents constant opening of the dll which could slow it
@@ -2203,7 +2434,7 @@ EndFunc   ;==>_Console_GetScreenBufferFullscreen
 ; Return values .: Success              - A CONSOLE_SCREEN_BUFFER_INFO struct.
 ;                  Failure              - zero
 ; Author ........: Matt Diesel (Mat)
-; Modified.......:
+; Modified ......:
 ; Remarks .......:
 ; Related .......: _Console_GetCursorPosition, _Console_GetScreenBufferSize, _Console_GetScreenBufferAttributes,
 ;                  _Console_GetScreenBufferPos, _Console_GetScreenBufferSize, _Console_GetScreenBufferInfoEx
@@ -2225,9 +2456,9 @@ Func _Console_GetScreenBufferInfo($hConsoleOutput = -1, $hDll = -1)
 EndFunc   ;==>_Console_GetScreenBufferInfo
 
 ; #FUNCTION# ====================================================================================================================
-; Name...........: _Console_GetScreenBufferInfoEx
+; Name ..........: _Console_GetScreenBufferInfoEx
 ; Description ...: Retrieves extended information about the specified console screen buffer.
-; Syntax.........: _Console_GetScreenBufferInfoEx( [ $hConsoleOutput [, $hDll ]] )
+; Syntax ........: _Console_GetScreenBufferInfoEx( [ $hConsoleOutput [, $hDll ]] )
 ; Parameters ....: $hConsoleOutput      - A handle to the console screen buffer. The handle must have the GENERIC_READ access
 ;                                         right.
 ;                  $hDll                - A handle to a dll to use. This prevents constant opening of the dll which could slow it
@@ -2235,7 +2466,7 @@ EndFunc   ;==>_Console_GetScreenBufferInfo
 ; Return values .: Success              - A CONSOLE_SCREEN_BUFFER_INFOEX struct.
 ;                  Failure              - zero
 ; Author ........: Matt Diesel (Mat)
-; Modified.......:
+; Modified ......:
 ; Remarks .......:
 ; Related .......: _Console_GetScreenBufferInfo, _Console_GetScreenBufferPopupAttributes, _Console_GetScreenBufferFullscreen,
 ;                  _Console_GetScreenBufferColorTable
@@ -2258,9 +2489,9 @@ Func _Console_GetScreenBufferInfoEx($hConsoleOutput = -1, $hDll = -1)
 EndFunc   ;==>_Console_GetScreenBufferInfoEx
 
 ; #FUNCTION# ====================================================================================================================
-; Name...........: _Console_GetScreenBufferMaxSize
+; Name ..........: _Console_GetScreenBufferMaxSize
 ; Description ...: Retrieves the maximum size of the specified console screen buffer.
-; Syntax.........: _Console_GetScreenBufferMaxSize( [ $hConsoleOutput [, $hDll ]] )
+; Syntax ........: _Console_GetScreenBufferMaxSize( [ $hConsoleOutput [, $hDll ]] )
 ; Parameters ....: $hConsoleOutput      - A handle to the console screen buffer. The handle must have the GENERIC_READ access
 ;                                         right.
 ;                  $hDll                - A handle to a dll to use. This prevents constant opening of the dll which could slow it
@@ -2270,7 +2501,7 @@ EndFunc   ;==>_Console_GetScreenBufferInfoEx
 ;                                       |[1] - Max height
 ;                  Failure              - Zero and sets the @Error flag.
 ; Author ........: Matt Diesel (Mat)
-; Modified.......:
+; Modified ......:
 ; Remarks .......:
 ; Related .......: _Console_GetScreenBufferInfo
 ; Link ..........:
@@ -2285,9 +2516,9 @@ Func _Console_GetScreenBufferMaxSize($hConsoleOutput = -1, $hDll = -1)
 EndFunc   ;==>_Console_GetScreenBufferMaxSize
 
 ; #FUNCTION# ====================================================================================================================
-; Name...........: _Console_GetScreenBufferPopupAttributes
+; Name ..........: _Console_GetScreenBufferPopupAttributes
 ; Description ...: Retrieves the fill attribute for console pop-ups for the specified console screen buffer.
-; Syntax.........: _Console_GetScreenBufferPopupAttributes( [ $hConsoleOutput [, $hDll ]] )
+; Syntax ........: _Console_GetScreenBufferPopupAttributes( [ $hConsoleOutput [, $hDll ]] )
 ; Parameters ....: $hConsoleOutput      - A handle to the console screen buffer. The handle must have the GENERIC_READ access
 ;                                         right.
 ;                  $hDll                - A handle to a dll to use. This prevents constant opening of the dll which could slow it
@@ -2295,7 +2526,7 @@ EndFunc   ;==>_Console_GetScreenBufferMaxSize
 ; Return values .: Success              - Returns the fill attribute for console pop-ups.
 ;                  Failure              - Zero and sets the @Error flag.
 ; Author ........: Matt Diesel (Mat)
-; Modified.......:
+; Modified ......:
 ; Remarks .......:
 ; Related .......: _Console_GetScreenBufferInfoEx
 ; Link ..........:
@@ -2309,9 +2540,9 @@ Func _Console_GetScreenBufferPopupAttributes($hConsoleOutput = -1, $hDll = -1)
 EndFunc   ;==>_Console_GetScreenBufferPopupAttributes
 
 ; #FUNCTION# ====================================================================================================================
-; Name...........: _Console_GetScreenBufferPos
+; Name ..........: _Console_GetScreenBufferPos
 ; Description ...: Retrieves the position of the specified console screen buffer.
-; Syntax.........: _Console_GetScreenBufferPos( [ $hConsoleOutput [, $hDll ]] )
+; Syntax ........: _Console_GetScreenBufferPos( [ $hConsoleOutput [, $hDll ]] )
 ; Parameters ....: $hConsoleOutput      - A handle to the console screen buffer. The handle must have the GENERIC_READ access
 ;                                         right.
 ;                  $hDll                - A handle to a dll to use. This prevents constant opening of the dll which could slow it
@@ -2323,7 +2554,7 @@ EndFunc   ;==>_Console_GetScreenBufferPopupAttributes
 ;                                       |[3] - Height
 ;                  Failure              - Zero and sets the @Error flag.
 ; Author ........: Matt Diesel (Mat)
-; Modified.......:
+; Modified ......:
 ; Remarks .......:
 ; Related .......: _Console_GetScreenBufferInfo
 ; Link ..........:
@@ -2339,9 +2570,9 @@ Func _Console_GetScreenBufferPos($hConsoleOutput = -1, $hDll = -1)
 EndFunc   ;==>_Console_GetScreenBufferPos
 
 ; #FUNCTION# ====================================================================================================================
-; Name...........: _Console_GetScreenBufferSize
+; Name ..........: _Console_GetScreenBufferSize
 ; Description ...: Retrieves the size of the specified console screen buffer.
-; Syntax.........: _Console_GetScreenBufferSize( [ $hConsoleOutput [, $hDll ]] )
+; Syntax ........: _Console_GetScreenBufferSize( [ $hConsoleOutput [, $hDll ]] )
 ; Parameters ....: $hConsoleOutput      - A handle to the console screen buffer. The handle must have the GENERIC_READ access
 ;                                         right.
 ;                  $hDll                - A handle to a dll to use. This prevents constant opening of the dll which could slow it
@@ -2351,7 +2582,7 @@ EndFunc   ;==>_Console_GetScreenBufferPos
 ;                                       |[1] - The height of the screen buffer in character cells.
 ;                  Failure              - Zero and sets the @Error flag.
 ; Author ........: Matt Diesel (Mat)
-; Modified.......:
+; Modified ......:
 ; Remarks .......:
 ; Related .......: _Console_GetScreenBufferInfo
 ; Link ..........:
@@ -2418,15 +2649,15 @@ Func _Console_GetSelectionFlags($hDll = -1)
 EndFunc   ;==>_Console_GetSelectionFlags
 
 ; #FUNCTION# ====================================================================================================================
-; Name...........: _Console_GetSelectionInfo
+; Name ..........: _Console_GetSelectionInfo
 ; Description ...: Retrieves information about the current console selection.
-; Syntax.........: _Console_GetSelectionInfo( [ $hDll ] )
+; Syntax ........: _Console_GetSelectionInfo( [ $hDll ] )
 ; Parameters ....: $hDll                - A handle to a dll to use. This prevents constant opening of the dll which could slow it
 ;                                         down. If you are calling lots of functions from the same dll then this recommended.
 ; Return values .: Success              - A CONSOLE_SELECTION_INFO struct
 ;                  Failure              - Zero and sets the @Error flag
 ; Author ........: Matt Diesel (Mat)
-; Modified.......:
+; Modified ......:
 ; Remarks .......:
 ; Related .......:
 ; Link ..........: http://msdn.microsoft.com/en-us/library/ms683173.aspx
@@ -2501,9 +2732,9 @@ Func _Console_GetSelectionRectEx($hDll = -1)
 EndFunc   ;==>_Console_GetSelectionRectEx
 
 ; #FUNCTION# ====================================================================================================================
-; Name...........: _Console_GetStdHandle
+; Name ..........: _Console_GetStdHandle
 ; Description ...: Retrieves a handle for the standard input, standard output, or standard error device.
-; Syntax.........: _Console_GetStdHandle( [ $nStdHandle [, $hDll ]] )
+; Syntax ........: _Console_GetStdHandle( [ $nStdHandle [, $hDll ]] )
 ; Parameters ....: $nStdHandle          - The standard device. Default is STD_OUTPUT_HANDLE. This parameter can be one of the
 ;                                         following values:
 ;                                       |STD_INPUT_HANDLE - The standard input device. Initially, this is the console input
@@ -2520,7 +2751,7 @@ EndFunc   ;==>_Console_GetSelectionRectEx
 ;                                         access.
 ;                  Failure              - zero
 ; Author ........: Matt Diesel (Mat)
-; Modified.......:
+; Modified ......:
 ; Remarks .......:
 ; Related .......:
 ; Link ..........: http://msdn.microsoft.com/en-us/library/ms683231.aspx
@@ -2537,16 +2768,16 @@ Func _Console_GetStdHandle($nStdHandle = -11, $hDll = -1)
 EndFunc   ;==>_Console_GetStdHandle
 
 ; #FUNCTION# ====================================================================================================================
-; Name...........: _Console_GetTitle
+; Name ..........: _Console_GetTitle
 ; Description ...: Retrieves the title for the current console window.
-; Syntax.........: _Console_GetTitle( [ $fUnicode [, $hDll ]] )
+; Syntax ........: _Console_GetTitle( [ $fUnicode [, $hDll ]] )
 ; Parameters ....: $fUnicode            - If 'True' then the unicode version will be used. If 'False' then ANSI is used.
 ;                  $hDll                - A handle to a dll to use. This prevents constant opening of the dll which could slow it
 ;                                         down. If you are calling lots of functions from the same dll then this recommended.
 ; Return values .: Success              - The current console's title.
 ;                  Failure              - A blank string
 ; Author ........: Matt Diesel (Mat)
-; Modified.......:
+; Modified ......:
 ; Remarks .......:
 ; Related .......:
 ; Link ..........: http://msdn.microsoft.com/en-us/library/ms683174.aspx
@@ -2572,15 +2803,15 @@ Func _Console_GetTitle($fUnicode = Default, $hDll = -1)
 EndFunc   ;==>_Console_GetTitle
 
 ; #FUNCTION# ====================================================================================================================
-; Name...........: _Console_GetWindow
+; Name ..........: _Console_GetWindow
 ; Description ...: Retrieves the window handle used by the console associated with the calling process.
-; Syntax.........: _Console_GetWindow( [ $hDll ] )
+; Syntax ........: _Console_GetWindow( [ $hDll ] )
 ; Parameters ....: $hDll                - A handle to a dll to use. This prevents constant opening of the dll which could slow it
 ;                                         down. If you are calling lots of functions from the same dll then this recommended.
 ; Return values .: Success              - A handle to the window used by the console associated with the calling process.
 ;                  Failure              - zero
 ; Author ........: Matt Diesel (Mat)
-; Modified.......:
+; Modified ......:
 ; Remarks .......:
 ; Related .......:
 ; Link ..........: http://msdn.microsoft.com/en-us/library/ms683175.aspx
@@ -2599,7 +2830,8 @@ EndFunc   ;==>_Console_GetWindow
 ; Name ..........: _Console_Pause
 ; Description ...: Pause the execution of the script until the user presses a key or timeout.
 ; Syntax ........: _Console_Pause( [ $sMsg = Default [, $iTime = -1 [, $fUnicode = Default [, $hDll = -1 ]]]] )
-; Parameters ....: $sMsg                - Message to display, 'Press any key to continue . . . ' if Default
+; Parameters ....: $hConsoleInput       - A handle to the console input buffer. The handle must have the GENERIC_READ access
+;                                         right.
 ;                  $iTime               - Pause timeout in milliseconds, -1 for INFINITE.
 ;                  $fUnicode            - If 'True' then the unicode version will be used. If 'False' then ANSI is used.
 ;                  $hDll                - A handle to a dll to use. This prevents constant opening of the dll which could slow it
@@ -2611,7 +2843,7 @@ EndFunc   ;==>_Console_GetWindow
 ; Author ........: Erik Pilsits (Wraithdu)
 ; Modified ......:
 ; Remarks .......: Returns once something has been typed into console.
-; Related .......:
+; Related .......: _Console_PauseMessage
 ; Link ..........:
 ; Example .......: No
 ; ===============================================================================================================================
@@ -2631,7 +2863,7 @@ Func _Console_Pause($hConsoleInput = -1, $iTime = -1, $fUnicode = Default, $hDll
 
 	; remove LINE_INPUT
 	_Console_SetMode($hConsoleInput, BitAND($modeOrig, BitNOT($ENABLE_LINE_INPUT)), $hDll)
-	Local $charOut = _Console_ReadConsole($hConsoleInput, 1, $fUnicode, $hDll)
+	Local $charOut = _Console_ReadConsoleEx($hConsoleInput, 1, $fUnicode, $hDll)
 
 	; flush any remaining input records
 	_Console_FlushInputBuffer($hConsoleInput, $hDll)
@@ -2641,7 +2873,6 @@ Func _Console_Pause($hConsoleInput = -1, $iTime = -1, $fUnicode = Default, $hDll
 
 	Return $charOut
 EndFunc   ;==>_Console_Pause
-
 
 ; TODO: Doc
 Func _Console_PauseMessage($hConsoleInput = -1, $hConsoleOutput = -1, $sMsg = Default, $iTime = -1, $fUnicode = Default, $hDll = -1)
@@ -2657,12 +2888,34 @@ Func _Console_PauseMessage($hConsoleInput = -1, $hConsoleOutput = -1, $sMsg = De
 	EndIf
 
 	Return _Console_Pause($hConsoleInput, $iTime, $fUnicode, $hDll)
-EndFunc
+EndFunc   ;==>_Console_PauseMessage
 
 ; #FUNCTION# ====================================================================================================================
-; Name...........: _Console_Read
+; Name ..........: _Console_Read
 ; Description ...: Reads data from the current console input buffer and removes it from the buffer.
-; Syntax.........: _Console_Read( [ $fEcho [, $fUnicode [, $hDll ]]] )
+; Syntax ........: _Console_Read( [ $fEcho [, $fUnicode [, $hDll ]]] )
+; Parameters ....: $fEcho               - If 'True' then input is read and echoed until a carriage return. If 'False' then input
+;                                         is read, NOT echoed, and returned one character at a time.
+;                  $fUnicode            - If 'True' then the unicode version will be used. If 'False' then ANSI is used.
+;                  $hDll                - A handle to a dll to use. This prevents constant opening of the dll which could slow it
+;                                         down. If you are calling lots of functions from the same dll then this recommended.
+; Return values .: Success              - The data from the console input buffer read.
+;                  Failure              - A blank string.
+; Author ........: Matt Diesel (Mat)
+; Modified ......: Erik Pilsits (Wraithdu)
+; Remarks .......: This Reads characters until a linebreak is found.
+; Related .......: _Console_ReadConsole, _Console_ReadConsoleEx
+; Link ..........: http://msdn.microsoft.com/en-us/library/ms684958.aspx
+; Example .......: No
+; ===============================================================================================================================
+Func _Console_Read($fEcho = True, $fUnicode = Default, $hDll = -1)
+	Return _Console_ReadConsole(-1, $fEcho, $fUnicode, $hDll)
+EndFunc   ;==>_Console_Read
+
+; #FUNCTION# ====================================================================================================================
+; Name ..........: _Console_ReadConsole
+; Description ...: Reads data from a console input buffer and removes it from the buffer.
+; Syntax ........: _Console_ReadConsole( [ $hConsoleInput [, $fEcho [, $fUnicode [, $hDll ]]]] )
 ; Parameters ....: $hConsoleInput       - A handle to the console input buffer. The handle must have the GENERIC_READ access
 ;                                         right.
 ;                  $fEcho               - If 'True' then input is read and echoed until a carriage return. If 'False' then input
@@ -2673,13 +2926,13 @@ EndFunc
 ; Return values .: Success              - The data from the console input buffer read.
 ;                  Failure              - A blank string.
 ; Author ........: Matt Diesel (Mat)
-; Modified.......: Erik Pilsits (Wraithdu)
+; Modified ......: Erik Pilsits (Wraithdu)
 ; Remarks .......: This Reads characters until a linebreak is found.
 ; Related .......:
 ; Link ..........: http://msdn.microsoft.com/en-us/library/ms684958.aspx
 ; Example .......: No
 ; ===============================================================================================================================
-Func _Console_Read($hConsoleInput = -1, $fEcho = True, $fUnicode = Default, $hDll = -1)
+Func _Console_ReadConsole($hConsoleInput = -1, $fEcho = True, $fUnicode = Default, $hDll = -1)
 	Local $sRet
 
 	If $fUnicode = Default Then $fUnicode = $__gfUnicode
@@ -2697,10 +2950,10 @@ Func _Console_Read($hConsoleInput = -1, $fEcho = True, $fUnicode = Default, $hDl
 
 		$sRet = ""
 		While 1
-			$sTemp = _Console_ReadConsole($hConsoleInput, 1, $fUnicode, $hDll)
+			$sTemp = _Console_ReadConsoleEx($hConsoleInput, 1, $fUnicode, $hDll)
 			If $sTemp = @CR Then
 				; read the leftover @LF
-				_Console_ReadConsole($hConsoleInput, 1, $fUnicode, $hDll)
+				_Console_ReadConsoleEx($hConsoleInput, 1, $fUnicode, $hDll)
 				ExitLoop
 			EndIf
 			$sRet &= $sTemp
@@ -2709,19 +2962,19 @@ Func _Console_Read($hConsoleInput = -1, $fEcho = True, $fUnicode = Default, $hDl
 		; read input, NO echo, return immediately after each record is read
 		; remove LINE_INPUT
 		_Console_SetMode($hConsoleInput, BitAND($modeOrig, BitNOT($ENABLE_LINE_INPUT)), $hDll)
-		$sRet = _Console_ReadConsole($hConsoleInput, 1, $fUnicode, $hDll)
+		$sRet = _Console_ReadConsoleEx($hConsoleInput, 1, $fUnicode, $hDll)
 	EndIf
 
 	; restore console mode
 	_Console_SetMode($hConsoleInput, $modeOrig, $hDll)
 
 	Return $sRet
-EndFunc   ;==>_Console_Read
+EndFunc   ;==>_Console_ReadConsole
 
 ; #FUNCTION# ====================================================================================================================
-; Name...........: _Console_ReadConsole
+; Name ..........: _Console_ReadConsoleEx
 ; Description ...: Reads data from a console input buffer and removes it from the buffer.
-; Syntax.........: _Console_ReadConsole($hConsoleInput, $nNumberOfCharsToRead [, $fUnicode [, $hDll ]] )
+; Syntax ........: _Console_ReadConsoleEx($hConsoleInput, $nNumberOfCharsToRead [, $fUnicode [, $hDll ]] )
 ; Parameters ....: $hConsoleInput       - A handle to the console input buffer. The handle must have the GENERIC_READ access
 ;                                         right.
 ;                  $nNumberOfCharsToRead- The number of characters to read from the buffer.
@@ -2731,13 +2984,13 @@ EndFunc   ;==>_Console_Read
 ; Return values .: Success              - The data from the console input buffer read.
 ;                  Failure              - A blank string.
 ; Author ........: Matt Diesel (Mat)
-; Modified.......:
+; Modified ......:
 ; Remarks .......:
-; Related .......:
+; Related .......: _Console_Read, _Console_ReadConsole
 ; Link ..........: http://msdn.microsoft.com/en-us/library/ms684958.aspx
 ; Example .......: No
 ; ===============================================================================================================================
-Func _Console_ReadConsole($hConsoleInput, $nNumberOfCharsToRead, $fUnicode = Default, $hDll = -1)
+Func _Console_ReadConsoleEx($hConsoleInput, $nNumberOfCharsToRead, $fUnicode = Default, $hDll = -1)
 	If $fUnicode = Default Then $fUnicode = $__gfUnicode
 	If $hDll = -1 Then $hDll = $__gvKernel32
 	If $hConsoleInput = -1 Then $hConsoleInput = _Console_GetStdHandle($STD_INPUT_HANDLE, $hDll)
@@ -2753,24 +3006,12 @@ Func _Console_ReadConsole($hConsoleInput, $nNumberOfCharsToRead, $fUnicode = Def
 	If @error Or (Not $aResult[0]) Then Return SetError(@error, @extended, "")
 
 	Return SetExtended($aResult[4], $tBuffer.buffer)
-EndFunc   ;==>_Console_ReadConsole
-
+EndFunc   ;==>_Console_ReadConsoleEx
 #region WIP
 
-Func _Console_ReadInputRecord($hConsoleInput = -1, $fUnicode = Default, $hDll = -1)
-	If $hDll = -1 Then $hDll = $__gvKernel32
-	If $fUnicode = Default Then $fUnicode = $__gfUnicode
-	If $hConsoleInput = -1 Then $hConsoleInput = _Console_GetStdHandle($STD_INPUT_HANDLE, $hDll)
-
-	Local $tInputRecord = DllStructCreate($tagINPUT_RECORD)
-
-	If _Console_ReadInput($hConsoleInput, DllStructGetPtr($tInputRecord), 1, $fUnicode, $hDll) = 0 Then Return SetError(@error, @extended, 0)
-
-	Return $tInputRecord
-EndFunc   ;==>_Console_ReadInputRecord
 
 ; Returns No. events read, zero = fail
-Func _Console_ReadInput($hConsoleInput, $pBuffer, $iLength, $fUnicode = Default, $hDll = -1)
+Func _Console_ReadConsoleInput($hConsoleInput, $pBuffer, $iLength, $fUnicode = Default, $hDll = -1)
 	If $fUnicode = Default Then $fUnicode = $__gfUnicode
 	If $hDll = -1 Then $hDll = $__gvKernel32
 	If $hConsoleInput = -1 Then $hConsoleInput = _Console_GetStdHandle($STD_INPUT_HANDLE, $hDll)
@@ -2783,9 +3024,29 @@ Func _Console_ReadInput($hConsoleInput, $pBuffer, $iLength, $fUnicode = Default,
 	If @error Or (Not $aResult[0]) Then Return SetError(@error, @extended, 0)
 
 	Return $aResult[4]
+EndFunc   ;==>_Console_ReadConsoleInput
+
+Func _Console_ReadConsoleInputRecord($hConsoleInput = -1, $fUnicode = Default, $hDll = -1)
+	If $hDll = -1 Then $hDll = $__gvKernel32
+	If $fUnicode = Default Then $fUnicode = $__gfUnicode
+	If $hConsoleInput = -1 Then $hConsoleInput = _Console_GetStdHandle($STD_INPUT_HANDLE, $hDll)
+
+	Local $tInputRecord = DllStructCreate($tagINPUT_RECORD)
+
+	If _Console_ReadInput($hConsoleInput, DllStructGetPtr($tInputRecord), 1, $fUnicode, $hDll) = 0 Then Return SetError(@error, @extended, 0)
+
+	Return $tInputRecord
+EndFunc   ;==>_Console_ReadConsoleInputRecord
+
+Func _Console_ReadInput($pBuffer, $iLength, $fUnicode = Default, $hDll = -1)
+	Return _Console_ReadConsoleInput(-1, $pBuffer, $iLength, $fUnicode, $hDll)
 EndFunc   ;==>_Console_ReadInput
 
+Func _Console_ReadInputRecord($fUnicode = Default, $hDll = -1)
+	Return _Console_ReadConsoleInputRecord(-1, $fUnicode, $hDll)
+EndFunc   ;==>_Console_ReadInputRecord
 #endregion WIP
+
 
 ; #FUNCTION# ====================================================================================================================
 ; Name ..........: _Console_ReadOutputCharacter
@@ -2805,7 +3066,7 @@ EndFunc   ;==>_Console_ReadInput
 ;                  Failure              - A blank string and sets @error.
 ; Author(s) .....: Matt Diesel (Mat)
 ; Modified ......:
-; Remarks .......: The difference between this and _Console_ReadConsole is that this function allows you to read the output of
+; Remarks .......: The difference between this and _Console_ReadConsoleEx is that this function allows you to read the output of
 ;                  any console from any location.
 ; Related .......: _Console_ReadConsole, _Console_WriteOutputCharacter
 ; Link ..........: http://msdn.microsoft.com/en-us/library/ms684969.aspx
@@ -2830,18 +3091,18 @@ Func _Console_ReadOutputCharacter($hConsoleOutput, $nNumberOfCharsToRead, $iX, $
 EndFunc   ;==>_Console_ReadOutputCharacter
 
 ; #FUNCTION# ====================================================================================================
-; Name...........: _Console_Run
+; Name ..........: _Console_Run
 ; Description....: Run a command in the console window
-; Syntax.........: _Console_Run($sCmd[, $fWait = True[, $fNew = False[, $iShow = Default]]])
+; Syntax ........: _Console_Run($sCmd [, $fWait [, $fNew [, $iShow]]] )
 ; Parameters.....: $sCmd     - Command to run
-;                  $fWait     - [Optional] Wait for command to finish
+;                  $fWait    - [Optional] Wait for command to finish
 ;                  $fNew     - [Optional] Run in new console window
 ;                  $iShow    - [Optional] Show flag (default for Run(Wait) is @SW_HIDE)
 ;
 ; Return values..: Success - See Run(Wait) functions
 ;                  Failure - See Run(Wait) functions
 ; Author.........: Erik Pilsits
-; Modified.......:
+; Modified ......:
 ; Remarks........:
 ; Related........:
 ; Link...........:
@@ -2854,6 +3115,37 @@ Func _Console_Run($sCmd, $fWait = True, $fNew = False, $iShow = Default)
 	If $fWait Then Return RunWait($sCmd, "", $iShow, $iFlag)
 	Return Run($sCmd, "", $iShow, $iFlag)
 EndFunc   ;==>_Console_Run
+
+
+#region WIP
+
+Func _Console_RunConsole($hStdIn, $hStdOut, $hStdErr, $sCmd, $fWait = True, $fNew = False, $iShow = Default, $hDll = -1)
+	If $hDll = -1 Then $hDll = $__gvKernel32
+	If $hStdIn = -1 Then $hStdIn = _Console_GetStdHandle($STD_INPUT_HANDLE, $hDll)
+	If $hStdOut = -1 Then $hStdOut = _Console_GetStdHandle($STD_OUTPUT_HANDLE, $hDll)
+	If $hStdErr = -1 Then $hStdErr = _Console_GetStdHandle($STD_ERROR_HANDLE, $hDll)
+
+	Local $tStartUpInfo = DllStructCreate($tagSTARTUPINFO)
+
+	$tStartUpInfo.Flags = $STARTF_USESTDHANDLES
+	$tStartUpInfo.StdInput = $hStdIn
+	$tStartUpInfo.StdOutput = $hStdOut
+	$tStartUpInfo.StdError = $hStdErr
+
+	Local $tProcInfo = DllStructCreate($tagPROCESS_INFORMATION)
+
+	If Not _WinAPI_CreateProcess(0, $sCmd, 0, 0, True, 0, 0, @WorkingDir, DllStructGetPtr($tStartUpInfo), DllStructGetPtr($tProcInfo)) Then _
+			Return SetError(1, 0, 0)
+
+	If $fWait Then
+		ProcessWaitClose($tProcInfo.ProcessID)
+		Return SetError(@error, 0, @error ? 0 : @extended)
+	EndIf
+
+	Return $tProcInfo.ProcessID
+EndFunc   ;==>_Console_RunConsole
+
+#endregion WIP
 
 ; #FUNCTION# ====================================================================================================================
 ; Name ..........: _Console_ScrollScreenBuffer
@@ -2980,9 +3272,9 @@ Func _Console_ScrollScreenBufferEx($hConsoleOutput, _
 	If $hDll = -1 Then $hDll = $__gvKernel32
 	If $hConsoleOutput = -1 Then $hConsoleOutput = _Console_GetStdHandle($STD_OUTPUT_HANDLE, $hDll)
 
-	If IsDllSTruct($pScrollRect) Then $pScrollRect = DllStructGetPtr($pScrollRect)
-	If IsDllSTruct($pFill) Then $pFill = DllStructGetPtr($pFill)
-	If $pClipRect <> 0 And IsDllSTruct($pClipRect) Then $pClipRect = DllStructGetPtr($pClipRect)
+	If IsDllStruct($pScrollRect) Then $pScrollRect = DllStructGetPtr($pScrollRect)
+	If IsDllStruct($pFill) Then $pFill = DllStructGetPtr($pFill)
+	If $pClipRect <> 0 And IsDllStruct($pClipRect) Then $pClipRect = DllStructGetPtr($pClipRect)
 
 	Local $aResult = DllCall($hDll, "bool", "ScrollConsoleScreenBuffer" & ($fUnicode ? "W" : "A"), _
 			"handle", $hConsoleOutput, _
@@ -2996,9 +3288,9 @@ Func _Console_ScrollScreenBufferEx($hConsoleOutput, _
 EndFunc   ;==>_Console_ScrollScreenBufferEx
 
 ; #FUNCTION# ====================================================================================================================
-; Name...........: _Console_SetActiveScreenBuffer
+; Name ..........: _Console_SetActiveScreenBuffer
 ; Description ...: Sets the specified screen buffer to be the currently displayed console screen buffer.
-; Syntax.........: _Console_SetActiveScreenBuffer($hConsoleOutput [, $hDll ] )
+; Syntax ........: _Console_SetActiveScreenBuffer($hConsoleOutput [, $hDll ] )
 ; Parameters ....: $hConsoleOutput      - A handle to the console output buffer. The handle must have the GENERIC_READ access
 ;                                         right.
 ;                  $hDll                - A handle to a dll to use. This prevents constant opening of the dll which could slow it
@@ -3006,7 +3298,7 @@ EndFunc   ;==>_Console_ScrollScreenBufferEx
 ; Return values .: Success              - True
 ;                  Failure              - False
 ; Author ........: Matt Diesel (Mat)
-; Modified.......:
+; Modified ......:
 ; Remarks .......:
 ; Related .......:
 ; Link ..........: http://msdn.microsoft.com/en-us/library/ms686010.aspx
@@ -3024,17 +3316,17 @@ Func _Console_SetActiveScreenBuffer($hConsoleOutput, $hDll = -1)
 EndFunc   ;==>_Console_SetActiveScreenBuffer
 
 ; #FUNCTION# ====================================================================================================================
-; Name...........: _Console_SetCP
+; Name ..........: _Console_SetCP
 ; Description ...: Sets the input code page used by the console associated with the calling process. A console uses its input
 ;                  code page to translate keyboard input into the corresponding character value.
-; Syntax.........: _Console_SetCP($iCodePageID [, $hDll ] )
+; Syntax ........: _Console_SetCP($iCodePageID [, $hDll ] )
 ; Parameters ....: $iCodePageID         - The identifier of the code page to be set. For more information, see Remarks.
 ;                  $hDll                - A handle to a dll to use. This prevents constant opening of the dll which could slow it
 ;                                         down. If you are calling lots of functions from the same dll then this recommended.
 ; Return values .: Success              - True
 ;                  Failure              - False
 ; Author ........: Matt Diesel (Mat)
-; Modified.......:
+; Modified ......:
 ; Remarks .......: A code page maps 256 character codes to individual characters. Different code pages include different special
 ;                  characters, typically customized for a language or a group of languages.
 ;                  The identifiers of the code pages available on the local computer are also stored in the registry under the
@@ -3062,10 +3354,10 @@ Func _Console_SetCP($iCodePageID, $hDll = -1)
 EndFunc   ;==>_Console_SetCP
 
 ; #FUNCTION# ====================================================================================================================
-; Name...........: _Console_SetCtrlHandler
+; Name ..........: _Console_SetCtrlHandler
 ; Description ...: Adds or removes an application-defined HandlerRoutine function from the list of handler functions for the
 ;                  calling process.
-; Syntax.........: _Console_SetCtrlHandler($pHandlerRoutine [, $fAdd [, $hDll ]] )
+; Syntax ........: _Console_SetCtrlHandler($pHandlerRoutine [, $fAdd [, $hDll ]] )
 ; Parameters ....: $pHandlerRoutine     - A pointer to the application-defined HandlerRoutine callback to be added or removed.
 ;                                         This parameter can be NULL.
 ;                  $fAdd                - If this parameter is TRUE, the handler is added; if it is FALSE, the handler is
@@ -3078,7 +3370,7 @@ EndFunc   ;==>_Console_SetCP
 ; Return values .: Success              - True
 ;                  Failure              - False
 ; Author ........: Matt Diesel (Mat)
-; Modified.......:
+; Modified ......:
 ; Remarks .......: It is up to the user to call DllCallback free once the function is no longer needed.
 ; Related .......:
 ; Link ..........: http://msdn.microsoft.com/en-us/library/ms686016.aspx
@@ -3098,9 +3390,9 @@ Func _Console_SetCtrlHandler($pHandlerRoutine, $fAdd = True, $hDll = -1)
 EndFunc   ;==>_Console_SetCtrlHandler
 
 ; #FUNCTION# ====================================================================================================================
-; Name...........: _Console_SetCursorInfo
+; Name ..........: _Console_SetCursorInfo
 ; Description ...: Sets the size and visibility of the cursor for the specified console screen buffer.
-; Syntax.........: _Console_SetCursorInfo($hConsoleOutput, $iSize, $fVisible [, $hDll ] )
+; Syntax ........: _Console_SetCursorInfo($hConsoleOutput, $iSize, $fVisible [, $hDll ] )
 ; Parameters ....: $hConsoleOutput      - A handle to the console output buffer. The handle must have the GENERIC_READ access
 ;                                         right.
 ;                  $iSize               - The percentage of the character cell that is filled by the cursor. This value is
@@ -3112,7 +3404,7 @@ EndFunc   ;==>_Console_SetCtrlHandler
 ; Return values .: Success              - True
 ;                  Failure              - False
 ; Author ........: Matt Diesel (Mat)
-; Modified.......:
+; Modified ......:
 ; Remarks .......: The 'cursor' refers to the console's caret NOT the mouse cursor.
 ; Related .......:
 ; Link ..........: http://msdn.microsoft.com/en-us/library/ms686019.aspx
@@ -3138,9 +3430,9 @@ Func _Console_SetCursorInfo($hConsoleOutput, $iSize, $fVisible, $hDll = -1)
 EndFunc   ;==>_Console_SetCursorInfo
 
 ; #FUNCTION# ====================================================================================================================
-; Name...........: _Console_SetCursorSize
+; Name ..........: _Console_SetCursorSize
 ; Description ...: Sets the size of the cursor for the specified console screen buffer.
-; Syntax.........: _Console_SetCursorSize($hConsoleOutput, $iSize [, $hDll ] )
+; Syntax ........: _Console_SetCursorSize($hConsoleOutput, $iSize [, $hDll ] )
 ; Parameters ....: $hConsoleOutput      - A handle to the console output buffer. The handle must have the GENERIC_READ access
 ;                                         right.
 ;                  $iSize               - The percentage of the character cell that is filled by the cursor. This value is
@@ -3151,7 +3443,7 @@ EndFunc   ;==>_Console_SetCursorInfo
 ; Return values .: Success              - True
 ;                  Failure              - False
 ; Author ........: Matt Diesel (Mat)
-; Modified.......:
+; Modified ......:
 ; Remarks .......:
 ; Related .......: _Console_SetCursorInfo
 ; Link ..........:
@@ -3162,9 +3454,9 @@ Func _Console_SetCursorSize($hConsoleOutput, $iSize, $hDll = -1)
 EndFunc   ;==>_Console_SetCursorSize
 
 ; #FUNCTION# ====================================================================================================================
-; Name...........: _Console_SetCursorVisible
+; Name ..........: _Console_SetCursorVisible
 ; Description ...: Sets the visibility of the cursor for the specified console screen buffer.
-; Syntax.........: _Console_SetCursorVisible($hConsoleOutput, $fVisible [, $hDll ] )
+; Syntax ........: _Console_SetCursorVisible($hConsoleOutput, $fVisible [, $hDll ] )
 ; Parameters ....: $hConsoleOutput      - A handle to the console output buffer. The handle must have the GENERIC_READ access
 ;                                         right.
 ;                  $fVisible            - The visibility of the cursor. If the cursor is visible, this is TRUE.
@@ -3173,7 +3465,7 @@ EndFunc   ;==>_Console_SetCursorSize
 ; Return values .: Success              - True
 ;                  Failure              - False
 ; Author ........: Matt Diesel (Mat)
-; Modified.......:
+; Modified ......:
 ; Remarks .......:
 ; Related .......: _Console_SetCursorInfo
 ; Link ..........:
@@ -3184,9 +3476,9 @@ Func _Console_SetCursorVisible($hConsoleOutput, $fVisible, $hDll = -1)
 EndFunc   ;==>_Console_SetCursorVisible
 
 ; #FUNCTION# ====================================================================================================================
-; Name...........: _Console_SetCursorPosition
+; Name ..........: _Console_SetCursorPosition
 ; Description ...: Sets the cursor position in the specified console screen buffer.
-; Syntax.........: _Console_SetCursorPosition($hConsoleOutput, $iX, $iY [, $hDll ] )
+; Syntax ........: _Console_SetCursorPosition($hConsoleOutput, $iX, $iY [, $hDll ] )
 ; Parameters ....: $hConsoleOutput      - A handle to the console output buffer. The handle must have the GENERIC_READ access
 ;                                         right.
 ;                  $iX                  - The X coord of the new cursor position, in characters. The coordinate must be within
@@ -3198,7 +3490,7 @@ EndFunc   ;==>_Console_SetCursorVisible
 ; Return values .: Success              - True
 ;                  Failure              - False
 ; Author ........: Matt Diesel (Mat)
-; Modified.......:
+; Modified ......:
 ; Remarks .......:
 ; Related .......: _Console_GetCursorInfo, _Console_GetCursorPosition
 ; Link ..........: http://msdn.microsoft.com/en-us/library/ms686025.aspx
@@ -3217,9 +3509,9 @@ Func _Console_SetCursorPosition($hConsoleOutput, $iX, $iY, $hDll = -1)
 EndFunc   ;==>_Console_SetCursorPosition
 
 ; #FUNCTION# ====================================================================================================================
-; Name...........: _Console_SetCurrentFontEx
+; Name ..........: _Console_SetCurrentFontEx
 ; Description ...: Sets extended information about the current console font.
-; Syntax.........: _Console_SetCurrentFontEx($hConsoleOutput, $fMaximumWindow, $iFont, $iWidth, $iHeight, $iFontFamily, _
+; Syntax ........: _Console_SetCurrentFontEx($hConsoleOutput, $fMaximumWindow, $iFont, $iWidth, $iHeight, $iFontFamily, _
 ;                  $iFontWeight, $sFaceName [, $hDll ] )
 ; Parameters ....: $hConsoleOutput      - A handle to the console screen buffer. The handle must have the GENERIC_READ access
 ;                                         right.
@@ -3243,7 +3535,7 @@ EndFunc   ;==>_Console_SetCursorPosition
 ; Return values .: Success              - True
 ;                  Failure              - False
 ; Author ........: Matt Diesel (Mat)
-; Modified.......:
+; Modified ......:
 ; Remarks .......:
 ; Related .......:
 ; Link ..........: http://msdn.microsoft.com/en-us/library/ms686200(VS.85).aspx
@@ -3272,9 +3564,9 @@ Func _Console_SetCurrentFontEx($hConsoleOutput, $iFont, $iWidth, $iHeight, $iFon
 EndFunc   ;==>_Console_SetCurrentFontEx
 
 ; #FUNCTION# ====================================================================================================================
-; Name...........: _Console_SetDisplayMode
+; Name ..........: _Console_SetDisplayMode
 ; Description ...: Sets the display mode of the specified console screen buffer.
-; Syntax.........: _Console_SetDisplayMode($hConsoleOutput, $iFlags, $iWidth, $iHeight [, $hDll ] )
+; Syntax ........: _Console_SetDisplayMode($hConsoleOutput, $iFlags, $iWidth, $iHeight [, $hDll ] )
 ; Parameters ....: $hConsoleOutput      - A handle to the console output buffer.
 ;                  $iFlags              - The display mode of the console. This parameter can be one or more of the following
 ;                                         values:
@@ -3287,7 +3579,7 @@ EndFunc   ;==>_Console_SetCurrentFontEx
 ; Return values .: Success              - True
 ;                  Failure              - False
 ; Author ........: Matt Diesel (Mat)
-; Modified.......:
+; Modified ......:
 ; Remarks .......:
 ; Related .......:
 ; Link ..........: http://msdn.microsoft.com/en-us/library/ms686028.aspx
@@ -3307,9 +3599,9 @@ Func _Console_SetDisplayMode($hConsoleOutput, $iWidth, $iHeight, $iFlags, $hDll 
 EndFunc   ;==>_Console_SetDisplayMode
 
 ; #FUNCTION# ====================================================================================================================
-; Name...........: _Console_SetHistoryInfo
+; Name ..........: _Console_SetHistoryInfo
 ; Description ...: Sets the history settings for the calling process's console.
-; Syntax.........: _Console_SetHistoryInfo($iHistoryBufferSize, $iNumberOfBuffers, $fStoreDuplicates [, $hDll ] )
+; Syntax ........: _Console_SetHistoryInfo($iHistoryBufferSize, $iNumberOfBuffers, $fStoreDuplicates [, $hDll ] )
 ; Parameters ....: $iHistoryBufferSize  - The number of commands kept in each history buffer.
 ;                  $iNumberOfBuffers    - The number of history buffers kept for this console process.
 ;                  $fStoreDuplicates    - If false, duplicate entries will not be stored in the history buffer.
@@ -3318,7 +3610,7 @@ EndFunc   ;==>_Console_SetDisplayMode
 ; Return values .: Success              - True
 ;                  Failure              - False
 ; Author ........: Matt Diesel (Mat)
-; Modified.......:
+; Modified ......:
 ; Remarks .......:
 ; Related .......:
 ; Link ..........: http://msdn.microsoft.com/en-us/library/ms686031.aspx
@@ -3341,9 +3633,9 @@ Func _Console_SetHistoryInfo($iHistoryBufferSize, $iNumberOfBuffers, $fStoreDupl
 EndFunc   ;==>_Console_SetHistoryInfo
 
 ; #FUNCTION# ====================================================================================================================
-; Name...........: _Console_SetIcon
+; Name ..........: _Console_SetIcon
 ; Description ...: Sets the icon of the console from a file.
-; Syntax.........: _Console_SetIcon($hConsole, $sFile [, $iInd [, $hDll ]] )
+; Syntax ........: _Console_SetIcon($hConsole, $sFile [, $iInd [, $hDll ]] )
 ; Parameters ....: $hConsole            - A handle to a console screen buffer.
 ;                  $sFile               - A path to a file that contains icons. This can be dll or exe or an icon file.
 ;                  $iInd                - The index of the icon to retieve. Default is 0.
@@ -3352,7 +3644,7 @@ EndFunc   ;==>_Console_SetHistoryInfo
 ; Return values .: Success              - True
 ;                  Failure              - False
 ; Author ........: Matt Diesel (Mat)
-; Modified.......:
+; Modified ......:
 ; Remarks .......: This function is a wrapper for the _Console_SetIconEx function, using _WinAPI_ExtractIconEx to get the
 ;                  the handle of the icon from the file.
 ; Related .......: _WinAPI_ExtractIconEx, _Console_SetIconEx
@@ -3377,16 +3669,16 @@ Func _Console_SetIcon($sFile, $iInd = 0, $hDll = -1)
 EndFunc   ;==>_Console_SetIcon
 
 ; #FUNCTION# ====================================================================================================================
-; Name...........: _Console_SetIconEx
+; Name ..........: _Console_SetIconEx
 ; Description ...: Sets the icon of the console from a HICON.
-; Syntax.........: _Console_SetIconEx($hConsole, $hIcon [, $hDll ] )
+; Syntax ........: _Console_SetIconEx($hConsole, $hIcon [, $hDll ] )
 ; Parameters ....: $hIcon               - A handle to an icon.
 ;                  $hDll                - A handle to a dll to use. This prevents constant opening of the dll which could slow it
 ;                                         down. If you are calling lots of functions from the same dll then this recommended.
 ; Return values .: Success              - True
 ;                  Failure              - False
 ; Author ........: Matt Diesel (Mat)
-; Modified.......:
+; Modified ......:
 ; Remarks .......:
 ; Related .......:
 ; Link ..........: This function is not documented on MSDN.
@@ -3403,9 +3695,9 @@ Func _Console_SetIconEx($hIcon, $hDll = -1)
 EndFunc   ;==>_Console_SetIconEx
 
 ; #FUNCTION# ====================================================================================================================
-; Name...........: _Console_SetMode
+; Name ..........: _Console_SetMode
 ; Description ...: Sets the input mode of a console's input buffer or the output mode of a console screen buffer.
-; Syntax.........: _Console_SetMode($hConsoleHandle, $iMode [, $hDll ] )
+; Syntax ........: _Console_SetMode($hConsoleHandle, $iMode [, $hDll ] )
 ; Parameters ....: $hConsoleHandle      - A handle to the console input buffer or a console screen buffer. The handle must have
 ;                                         the GENERIC_READ access right.
 ;                  $iMode               - The input or output mode to be set. If the hConsoleHandle parameter is an input handle,
@@ -3474,7 +3766,7 @@ EndFunc   ;==>_Console_SetIconEx
 ; Return values .: Success              - True
 ;                  Failure              - False
 ; Author ........: Matt Diesel (Mat)
-; Modified.......:
+; Modified ......:
 ; Remarks .......:
 ; Related .......:
 ; Link ..........: http://msdn.microsoft.com/en-us/library/ms686033.aspx
@@ -3493,18 +3785,18 @@ Func _Console_SetMode($hConsoleHandle, $iMode, $hDll = -1)
 EndFunc   ;==>_Console_SetMode
 
 ; #FUNCTION# ====================================================================================================================
-; Name...........: _Console_SetOutputCP
+; Name ..........: _Console_SetOutputCP
 ; Description ...: Sets the output code page used by the console associated with the calling process. A console uses its output
 ;                  code page to translate the character values written by the various output functions into the images displayed
 ;                  in the console window.
-; Syntax.........: _Console_SetOutputCP($iCodePageID [, $hDll ] )
+; Syntax ........: _Console_SetOutputCP($iCodePageID [, $hDll ] )
 ; Parameters ....: $iCodePageID         - The identifier of the code page to set. For more information, see Remarks.
 ;                  $hDll                - A handle to a dll to use. This prevents constant opening of the dll which could slow it
 ;                                         down. If you are calling lots of functions from the same dll then this recommended.
 ; Return values .: Success              - True
 ;                  Failure              - False
 ; Author ........: Matt Diesel (Mat)
-; Modified.......:
+; Modified ......:
 ; Remarks .......: A code page maps 256 character codes to individual characters. Different code pages include different special
 ;                  characters, typically customized for a language or a group of languages.
 ;                  The identifiers of the code pages available on the local computer are also stored in the registry under the
@@ -3531,9 +3823,9 @@ Func _Console_SetOutputCP($iCodePageID, $hDll = -1)
 EndFunc   ;==>_Console_SetOutputCP
 
 ; #FUNCTION# ====================================================================================================================
-; Name...........: _Console_SetScreenBufferInfoEx
+; Name ..........: _Console_SetScreenBufferInfoEx
 ; Description ...: Sets the foreground (text) and background color attributes of characters written to the console screen buffer.
-; Syntax.........: _Console_SetScreenBufferInfoEx($hConsoleOutput, $iSizeX, $iSizeY, $iCursorPositionX, _
+; Syntax ........: _Console_SetScreenBufferInfoEx($hConsoleOutput, $iSizeX, $iSizeY, $iCursorPositionX, _
 ;                  $iCursorPositionY,  $iAttributes, $iLeft, $iTop, $iRight, $iBottom, $iMaximumWindowSizeX, _
 ;                  $iMaximumWindowSizeY, $iPopupAttributes, $fFullscreenSupported, $aiColorTable)
 ; Parameters ....: $hConsoleOutput      - A handle to the console screen buffer. The handle must have the GENERIC_WRITE access
@@ -3577,7 +3869,7 @@ EndFunc   ;==>_Console_SetOutputCP
 ; Return values .: Success              - True
 ;                  Failure              - False
 ; Author ........: Matt Diesel (Mat)
-; Modified.......:
+; Modified ......:
 ; Remarks .......:
 ; Related .......: _Console_GetScreenBufferInfoEx
 ; Link ..........: http://msdn.microsoft.com/en-us/library/ms686039.aspx
@@ -3617,9 +3909,9 @@ Func _Console_SetScreenBufferInfoEx($hConsoleOutput, $iSizeX, $iSizeY, $iCursorP
 EndFunc   ;==>_Console_SetScreenBufferInfoEx
 
 ; #FUNCTION# ====================================================================================================================
-; Name...........: _Console_SetScreenBufferInfoExEx
+; Name ..........: _Console_SetScreenBufferInfoExEx
 ; Description ...: Sets the foreground (text) and background color attributes of characters written to the console screen buffer.
-; Syntax.........: _Console_SetScreenBufferInfoExEx($hConsoleOutput, $pConsoleScreenBufferInfoEx [, $hDll = -1 ] )
+; Syntax ........: _Console_SetScreenBufferInfoExEx($hConsoleOutput, $pConsoleScreenBufferInfoEx [, $hDll = -1 ] )
 ; Parameters ....: $hConsoleOutput      - A handle to the console screen buffer. The handle must have the GENERIC_WRITE access
 ;                                         right.
 ;                  $pConsoleScreenBufferInfoEx - A pointer to a CONSOLESCREENBUFFERINFOEX structure.
@@ -3628,7 +3920,7 @@ EndFunc   ;==>_Console_SetScreenBufferInfoEx
 ; Return values .: Success              - True
 ;                  Failure              - False
 ; Author ........: Matt Diesel (Mat)
-; Modified.......:
+; Modified ......:
 ; Remarks .......:
 ; Related .......: _Console_GetScreenBufferInfoEx, _Console_SetScreenBufferInfoEx
 ; Link ..........: http://msdn.microsoft.com/en-us/library/ms686039.aspx
@@ -3647,9 +3939,9 @@ Func _Console_SetScreenBufferInfoExEx($hConsoleOutput, $pConsoleScreenBufferInfo
 EndFunc   ;==>_Console_SetScreenBufferInfoExEx
 
 ; #FUNCTION# ====================================================================================================================
-; Name...........: _Console_SetScreenBufferSize
+; Name ..........: _Console_SetScreenBufferSize
 ; Description ...: Changes the size of the specified console screen buffer.
-; Syntax.........: _Console_SetScreenBufferSize($hConsoleOutput, $iWidth, $iHeight [, $hDll ] )
+; Syntax ........: _Console_SetScreenBufferSize($hConsoleOutput, $iWidth, $iHeight [, $hDll ] )
 ; Parameters ....: $hConsoleOutput      - A handle to the console screen buffer. The handle must have the GENERIC_READ access
 ;                                         right.
 ;                  $iWidth              - The width of the console screen buffer, in character columns.
@@ -3659,7 +3951,7 @@ EndFunc   ;==>_Console_SetScreenBufferInfoExEx
 ; Return values .: Success              - True
 ;                  Failure              - False
 ; Author ........: Matt Diesel (Mat)
-; Modified.......:
+; Modified ......:
 ; Remarks .......:
 ; Related .......:
 ; Link ..........: http://msdn.microsoft.com/en-us/library/ms686044.aspx
@@ -3678,9 +3970,9 @@ Func _Console_SetScreenBufferSize($hConsoleOutput, $iWidth, $iHeight, $hDll = -1
 EndFunc   ;==>_Console_SetScreenBufferSize
 
 ; #FUNCTION# ====================================================================================================================
-; Name...........: _Console_SetStdHandle
+; Name ..........: _Console_SetStdHandle
 ; Description ...: Sets the handle for the specified standard device (standard input, standard output, or standard error).
-; Syntax.........: _Console_SetStdHandle($nStdHandle, $hHandle [, $hDll ] )
+; Syntax ........: _Console_SetStdHandle($nStdHandle, $hHandle [, $hDll ] )
 ; Parameters ....: $nStdHandle          - The standard device for which the handle is to be set. This parameter can be one of
 ;                                         the following values.
 ;                                       |STD_INPUT_HANDLE - The standard input device.
@@ -3692,7 +3984,7 @@ EndFunc   ;==>_Console_SetScreenBufferSize
 ; Return values .: Success              - True
 ;                  Failure              - False
 ; Author ........: Matt Diesel (Mat)
-; Modified.......:
+; Modified ......:
 ; Remarks .......: The standard handles of a process may have been redirected by a call to _Console_SetStdHandle, in which case
 ;                  _Console_GetStdHandle will return the redirected handle. If the standard handles have been redirected, you
 ;                  can specify the CONIN$ value in a call to the _WinApi_CreateFile function to get a handle to a console's input
@@ -3713,11 +4005,11 @@ Func _Console_SetStdHandle($nStdHandle, $hHandle, $hDll = -1)
 EndFunc   ;==>_Console_SetStdHandle
 
 ; #FUNCTION# ====================================================================================================================
-; Name...........: _Console_SetTextAttribute
+; Name ..........: _Console_SetTextAttribute
 ; Description ...: Sets the attributes of characters written to the console screen buffer by the _WinApi_WriteFile or
 ;                  _Console_WriteConsole function, or echoed by the _WinApi_ReadFile or _Console_Read function. This
 ;                  function affects text written after the function call.
-; Syntax.........: _Console_SetTextAttribute($hConsoleOutput, $iAttributes [, $hDll ] )
+; Syntax ........: _Console_SetTextAttribute($hConsoleOutput, $iAttributes [, $hDll ] )
 ; Parameters ....: $hConsoleOutput      - A handle to the console screen buffer. The handle must have the GENERIC_READ access
 ;                                         right.
 ;                  $iAttributes         - The attributes of the characters written to a screen buffer by the _Console_WriteFile
@@ -3744,7 +4036,7 @@ EndFunc   ;==>_Console_SetStdHandle
 ; Return values .: Success              - True
 ;                  Failure              - False
 ; Author ........: Matt Diesel (Mat)
-; Modified.......:
+; Modified ......:
 ; Remarks .......: To determine the current color attributes of a screen buffer, call the _Console_GetScreenBufferInfo
 ;                  function.
 ; Related .......:
@@ -3764,9 +4056,9 @@ Func _Console_SetTextAttribute($hConsoleOutput, $iAttributes, $hDll = -1)
 EndFunc   ;==>_Console_SetTextAttribute
 
 ; #FUNCTION# ====================================================================================================================
-; Name...........: _Console_SetTitle
+; Name ..........: _Console_SetTitle
 ; Description ...: Sets the title for the current console window.
-; Syntax.........: _Console_SetTitle($sConsoleTitle [, $fUnicode [, $hDll ]] )
+; Syntax ........: _Console_SetTitle($sConsoleTitle [, $fUnicode [, $hDll ]] )
 ; Parameters ....: $sConsoleTitle       - A string value containing the new title
 ;                  $fUnicode            - If 'True' then the unicode version will be used (default). If 'False' then ANSI is used
 ;                  $hDll                - A handle to a dll to use. This prevents constant opening of the dll which could slow it
@@ -3774,7 +4066,7 @@ EndFunc   ;==>_Console_SetTextAttribute
 ; Return values .: Success              - True
 ;                  Failure              - False
 ; Author ........: Matt Diesel (Mat)
-; Modified.......:
+; Modified ......:
 ; Remarks .......:
 ; Related .......:
 ; Link ..........: http://msdn.microsoft.com/en-us/library/ms686050.aspx
@@ -3792,9 +4084,9 @@ Func _Console_SetTitle($sConsoleTitle, $fUnicode = Default, $hDll = -1)
 EndFunc   ;==>_Console_SetTitle
 
 ; #FUNCTION# ====================================================================================================================
-; Name...........: _Console_SetWindowInfo
+; Name ..........: _Console_SetWindowInfo
 ; Description ...: Sets the current size and position of a console screen buffer's window.
-; Syntax.........: _Console_SetWindowInfo($hConsoleOutput, $iLeft, $iTop, $iRight, $iBottom [, $fAbsolute [, $hDll ]] )
+; Syntax ........: _Console_SetWindowInfo($hConsoleOutput, $iLeft, $iTop, $iRight, $iBottom [, $fAbsolute [, $hDll ]] )
 ; Parameters ....: $hConsoleOutput      - A handle to the console screen buffer. The handle must have the GENERIC_READ access
 ;                                         right.
 ;                  $iLeft               - The left edge of the buffer.
@@ -3809,7 +4101,7 @@ EndFunc   ;==>_Console_SetTitle
 ; Return values .: Success              - True
 ;                  Failure              - False
 ; Author ........: Matt Diesel (Mat)
-; Modified.......:
+; Modified ......:
 ; Remarks .......:
 ; Related .......: _Console_SetWindowPos
 ; Link ..........: http://msdn.microsoft.com/en-us/library/ms686125.aspx
@@ -3835,9 +4127,9 @@ Func _Console_SetWindowInfo($hConsoleOutput, $iLeft, $iTop, $iRight, $iBottom, $
 EndFunc   ;==>_Console_SetWindowInfo
 
 ; #FUNCTION# ====================================================================================================================
-; Name...........: _Console_SetWindowPos
+; Name ..........: _Console_SetWindowPos
 ; Description ...: Sets the current size and position of a console screen buffer's window.
-; Syntax.........: _Console_SetWindowPos($hConsoleOutput, $iX, $iY, $iWidth, $iHeight [, $hDll ] )
+; Syntax ........: _Console_SetWindowPos($hConsoleOutput, $iX, $iY, $iWidth, $iHeight [, $hDll ] )
 ; Parameters ....: $hConsoleOutput      - A handle to the console screen buffer. The handle must have the GENERIC_READ access
 ;                                         right.
 ;                  $iX                  - The new X coordinate of the window
@@ -3849,7 +4141,7 @@ EndFunc   ;==>_Console_SetWindowInfo
 ; Return values .: Success              - True
 ;                  Failure              - False
 ; Author ........: Matt Diesel (Mat)
-; Modified.......:
+; Modified ......:
 ; Remarks .......:
 ; Related .......: _Console_SetWindowInfo
 ; Link ..........:
@@ -3860,9 +4152,9 @@ Func _Console_SetWindowPos($hConsoleOutput, $iX, $iY, $iWidth, $iHeight, $hDll =
 EndFunc   ;==>_Console_SetWindowPos
 
 ; #FUNCTION# ====================================================================================================================
-; Name...........: _Console_Write
+; Name ..........: _Console_Write
 ; Description ...: Writes a character string to the *current* console screen buffer beginning at the current cursor location.
-; Syntax.........: _Console_Write($sText [, $fUnicode [, $hDll ]] )
+; Syntax ........: _Console_Write($sText [, $fUnicode [, $hDll ]] )
 ; Parameters ....: $sText               - Text to be written to the console screen buffer.
 ;                  $fUnicode            - If 'True' then the unicode version will be used. If 'False' then ANSI is used.
 ;                  $hDll                - A handle to a dll to use. This prevents constant opening of the dll which could slow it
@@ -3870,7 +4162,7 @@ EndFunc   ;==>_Console_SetWindowPos
 ; Return values .: Success              - True, the number of characters written is returned in @extended.
 ;                  Failure              - False
 ; Author ........: Matt Diesel (Mat)
-; Modified.......:
+; Modified ......:
 ; Remarks .......: This is just a wrapper for the _Console_WriteConsole function. It is the same as calling _Console_WriteConsole
 ;                  with a first parameter ($hConsole) = -1.
 ; Related .......: _Console_Read, _Console_WriteConsole, _Console_WriteConsoleOutputCharacter
@@ -3882,9 +4174,9 @@ Func _Console_Write($sText, $fUnicode = Default, $hDll = -1)
 EndFunc   ;==>_Console_Write
 
 ; #FUNCTION# ====================================================================================================================
-; Name...........: _Console_WriteConsole
+; Name ..........: _Console_WriteConsole
 ; Description ...: Writes a character string to a console screen buffer beginning at the current cursor location.
-; Syntax.........: _Console_WriteConsole($hConsole, $sText [, $fUnicode [, $hDll ]] )
+; Syntax ........: _Console_WriteConsole($hConsole, $sText [, $fUnicode [, $hDll ]] )
 ; Parameters ....: $hConsole            - A handle to the console screen buffer. The handle must have the GENERIC_WRITE access
 ;                                         right. -1 (default) is the active screen buffer for the current instance.
 ;                  $sText               - Text to be written to the console screen buffer
@@ -3894,7 +4186,7 @@ EndFunc   ;==>_Console_Write
 ; Return values .: Success              - True, the number of characters written is returned in @extended.
 ;                  Failure              - False
 ; Author ........: Matt Diesel (Mat)
-; Modified.......: Erik Pilsits (wraithdu) - Added code to handle writing to the SciTE output pane.
+; Modified ......: Erik Pilsits (wraithdu) - Added code to handle writing to the SciTE output pane.
 ; Remarks .......:
 ; Related .......: _Console_Read
 ; Link ..........: http://msdn.microsoft.com/en-us/library/ms687401.aspx
@@ -3923,10 +4215,10 @@ Func _Console_WriteConsole($hConsole, $sText, $fUnicode = Default, $hDll = -1)
 EndFunc   ;==>_Console_WriteConsole
 
 ; #FUNCTION# ====================================================================================================================
-; Name...........: _Console_WriteLine
+; Name ..........: _Console_WriteLine
 ; Description ...: Writes a character string to the *current* console screen buffer beginning at the current cursor location
 ;                  and appends a new line
-; Syntax.........: _Console_WriteLine($sText [, $fUnicode [, $hDll ]] )
+; Syntax ........: _Console_WriteLine($sText [, $fUnicode [, $hDll ]] )
 ; Parameters ....: $sText               - Text to be written to the console screen buffer.
 ;                  $fUnicode            - If 'True' then the unicode version will be used. If 'False' then ANSI is used.
 ;                  $hDll                - A handle to a dll to use. This prevents constant opening of the dll which could slow it
@@ -3934,7 +4226,7 @@ EndFunc   ;==>_Console_WriteConsole
 ; Return values .: Success              - True, the number of characters written is returned in @extended.
 ;                  Failure              - False
 ; Author ........: Matt Diesel (Mat)
-; Modified.......:
+; Modified ......:
 ; Remarks .......: This is just a wrapper for the _Console_WriteConsole function. It is the same as calling _Console_WriteConsole
 ;                  with a first parameter ($hConsole) = -1.
 ; Related .......: _Console_Read, _Console_WriteConsole, _Console_WriteConsoleOutputCharacter
@@ -4049,7 +4341,7 @@ Func _Console_WriteOutputCharacter($hConsole, $sText, $iX, $iY, $fUnicode = Defa
 			"dword", StringLen($sText), _
 			"dword", BitShift($iY, -16) + $iX, _
 			"dword*", 0)
-	If @error then Return SetError(1, @error, False)
+	If @error Then Return SetError(1, @error, False)
 
 	Return True
 EndFunc   ;==>_Console_WriteOutputCharacter

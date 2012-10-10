@@ -1,8 +1,8 @@
 
-
 #include "../Console.au3"
 
 _Console_Alloc()
+_Console_SetMode(-1, $ENABLE_WINDOW_INPUT)
 
 While 1
 	$tData = _Console_ReadInputRecord()
@@ -65,7 +65,7 @@ Func _Console_PrintEventRecord($pInputRecord)
 		Case $MENU_EVENT
 			$tInputRecord = DllStructCreate($tagINPUT_RECORD_MENU, $pInputRecord)
 
-			_Console_WriteLine("Menu Event")
+			_Console_WriteLine("./log.txt", "Menu Event id: " & $tInputRecord.CommandId)
 		Case $FOCUS_EVENT
 			$tInputRecord = DllStructCreate($tagINPUT_RECORD_FOCUS, $pInputRecord)
 
