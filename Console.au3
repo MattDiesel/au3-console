@@ -648,22 +648,51 @@ Global Const $tagKEY_EVENT_RECORD = $tagKEY_EVENT_RECORD_W
 ;                                         |SHIFT_PRESSED - The SHIFT key is pressed.
 ;                  EventFlags           - The type of mouse event. If this value is zero, it indicates a mouse button being
 ;                                         pressed or released. Otherwise, this member is one of the following values.
-;                                         |DOUBLE_CLICK - The second click (button press) of a double-click occurred. The first click is returned as a regular button-press event.
-;                                         |MOUSE_HWHEELED - The horizontal mouse wheel was moved.
-;                                                           If the high word of the dwButtonState member contains a positive value, the wheel was rotated to the right. Otherwise, the wheel was rotated to the left. - 0x0001
-;                                                           A change in mouse position occurred.
-;                                         |MOUSE_WHEELED - The vertical mouse wheel was moved.
-;                                                          If the high word of the dwButtonState member contains a positive value, the wheel was rotated forward, away from the user. Otherwise, the wheel was rotated backward, toward the user.
+;                                         |DOUBLE_CLICK - The second click (button press) of a double-click occurred. The first
+;                                                         click is returned as a regular button-press event.
+;                                         |MOUSE_HWHEELED - The horizontal mouse wheel was moved. If the high word of the
+;                                                           ButtonState member contains a positive value, the wheel was rotated
+;                                                           to the right. Otherwise, the wheel was rotated to the left.
+;                                         |MOUSE_MOVED - A change in mouse position occurred.
+;                                         |MOUSE_WHEELED - The vertical mouse wheel was moved. If the high word of the
+;                                                          ButtonState member contains a positive value, the wheel was rotated
+;                                                          forward, away from the user. Otherwise, the wheel was rotated
+;                                                          backward, toward the user.
 ; Author ........: Matt Diesel (Mat)
-; Remarks .......:
-; Related .......:
+; Remarks .......: Mouse events are placed in the input buffer when the console is in mouse mode (ENABLE_MOUSE_INPUT).
+;+
+;                  Mouse events are generated whenever the user moves the mouse, or presses or releases one of the mouse buttons.
+;                  Mouse events are placed in a console's input buffer only when the console group has the keyboard focus and the
+;                  cursor is within the borders of the console's window.
+; Related .......: $tagINPUT_RECORD, $tagINPUT_RECORD_MOUSE
+; Link ..........: http://msdn.microsoft.com/en-us/library/ms684239
 ; ===============================================================================================================================
 Global Const $tagMOUSE_EVENT_RECORD = "SHORT MousePositionX; SHORT MousePositionY; DWORD ButtonState; DWORD ControlKeyState;" & _
 		"DWORD EventFlags;"
 
-
+; #STRUCTURE# ===================================================================================================================
+; Name ..........: $tagWINDOW_BUFFER_SIZE_RECORD
+; Description ...: Describes a change in the size of the console screen buffer.
+; Fields ........: SizeX                - The width of the console screen buffer, in character cell columns.
+;                  SizeY                - The height of the console screen buffer, in character cell rows.
+; Author ........: Matt Diesel (Mat)
+; Remarks .......: Buffer size events are placed in the input buffer when the console is in window-aware mode
+;                  (ENABLE_WINDOW_INPUT).
+; Related .......: $tagINPUT_RECORD, $tagINPUT_RECORD_SIZE
+; Link ..........: http://msdn.microsoft.com/en-us/library/ms687093
+; ===============================================================================================================================
 Global Const $tagWINDOW_BUFFER_SIZE_RECORD = "SHORT SizeX; SHORT SizeY;"
 
+; #STRUCTURE# ===================================================================================================================
+; Name ..........: $tagMENU_EVENT_RECORD
+; Description ...: Describes a menu event in a console $tagINPUT_RECORD structure. These events are used internally and should be
+;                  ignored.
+; Fields ........: CommandId            - Reserved according to MSDN documentation. In reality these correspond to the standard
+;                                         menu ids.
+; Author ........: Your Name
+; Remarks .......:
+; Related .......:
+; ===============================================================================================================================
 Global Const $tagMENU_EVENT_RECORD = "UINT CommandId;"
 
 Global Const $tagFOCUS_EVENT_RECORD = "BOOL SetFocus;"
@@ -724,7 +753,7 @@ Func _Console_AddAlias($sSource, $sTarget, $sExeName = Default, $fUnicode = Defa
 	If $fUnicode = Default Then $fUnicode = $__gfUnicode
 	If $hDll = -1 Then $hDll = $__gvKernel32
 
-	Local $aResult = DllCall($hDll, "bool", "AddConsoleAlias" & ($fUnicode ? "A" : "W"), _
+	Local $aResult = DllCall($hDll, "bool", "AddConsoleAlias" & ($fUnicode ? "W" : "A"), _
 			($fUnicode ? "w" : "") & "str", $sSource, _
 			($fUnicode ? "w" : "") & "str", $sTarget, _
 			($fUnicode ? "w" : "") & "str", $sExeName)
@@ -1045,7 +1074,7 @@ Func _Console_GetAlias($sSource, $sExeName = -1, $fUnicode = Default, $hDll = -1
 
 	Local $tTargetBuffer = DllStructCreate(($fUnicode ? "w" : "") & "char buffer[1024]")
 
-	Local $aResult = DllCall($hDll, "dword", "GetConsoleAlias" & ($fUnicode ? "A" : "W"), _
+	Local $aResult = DllCall($hDll, "dword", "GetConsoleAlias" & ($fUnicode ? "W" : "A"), _
 			($fUnicode ? "w" : "") & "str", $sSource, _
 			"struct*", $tTargetBuffer, _
 			"dword", DllStructGetSize($tTargetBuffer), _
@@ -1079,7 +1108,7 @@ Func _Console_GetAliases($sExeName = -1, $fUnicode = Default, $hDll = -1)
 
 	Local $tAliasBuffer = DllStructCreate(($fUnicode ? "w" : "") & "char buffer[" & _Console_GetAliasesLength($sExeName, $fUnicode, $hDll) & "]")
 
-	Local $aResult = DllCall($hDll, "dword", "GetConsoleAliases" & ($fUnicode ? "A" : "W"), _
+	Local $aResult = DllCall($hDll, "dword", "GetConsoleAliases" & ($fUnicode ? "W" : "A"), _
 			"struct*", $tAliasBuffer, _
 			"dword", DllStructGetSize($tAliasBuffer), _
 			($fUnicode ? "w" : "") & "str", $sExeName)
@@ -1111,7 +1140,7 @@ Func _Console_GetAliasesLength($sExeName = -1, $fUnicode = Default, $hDll = -1)
 	If $fUnicode = Default Then $fUnicode = $__gfUnicode
 	If $hDll = -1 Then $hDll = $__gvKernel32
 
-	Local $aResult = DllCall($hDll, "dword", "GetConsoleAliasesLength" & ($fUnicode ? "A" : "W"), _
+	Local $aResult = DllCall($hDll, "dword", "GetConsoleAliasesLength" & ($fUnicode ? "W" : "A"), _
 			($fUnicode ? "w" : "") & "str", $sExeName)
 	If @error Then Return SetError(@error, @extended, 0)
 
@@ -1141,7 +1170,7 @@ Func _Console_GetAliasExes($fUnicode = Default, $hDll = -1)
 
 	Local $tExeNameBuffer = DllStructCreate(($fUnicode ? "w" : "") & "char buffer[" & _Console_GetAliasExesLength(True, $hDll) & "]")
 
-	Local $aResult = DllCall($hDll, "dword", "GetConsoleAliasExes" & ($fUnicode ? "A" : "W"), _
+	Local $aResult = DllCall($hDll, "dword", "GetConsoleAliasExes" & ($fUnicode ? "W" : "A"), _
 			"struct*", $tExeNameBuffer, _
 			"dword", DllStructGetSize($tExeNameBuffer))
 	If @error Or Not $aResult[0] Then Return SetError(@error, @extended, "")
@@ -1170,7 +1199,7 @@ Func _Console_GetAliasExesLength($fUnicode = Default, $hDll = -1)
 	If $fUnicode = Default Then $fUnicode = $__gfUnicode
 	If $hDll = -1 Then $hDll = $__gvKernel32
 
-	Local $aResult = DllCall($hDll, "dword", "GetConsoleAliasExesLength" & ($fUnicode ? "A" : "W"))
+	Local $aResult = DllCall($hDll, "dword", "GetConsoleAliasExesLength" & ($fUnicode ? "W" : "A"))
 	If @error Then Return SetError(@error, @extended, 0)
 
 	If $fUnicode Then Return $aResult[0] / 2
@@ -1991,7 +2020,7 @@ Func _Console_GetOriginalTitle($fUnicode = Default, $hDll = -1)
 
 	Local $tConsoleTitle = DllStructCreate(($fUnicode ? "w" : "") & "char buffer[128]")
 
-	Local $aResult = DllCall($hDll, "dword", "GetConsoleOriginalTitle" & ($fUnicode ? "A" : "W"), _
+	Local $aResult = DllCall($hDll, "dword", "GetConsoleOriginalTitle" & ($fUnicode ? "W" : "A"), _
 			"struct*", $tConsoleTitle, _
 			"dword", DllStructGetSize($tConsoleTitle))
 	If @error Or Not $aResult[0] Then Return SetError(@error, @extended, "")
@@ -2527,14 +2556,14 @@ Func _Console_GetTitle($fUnicode = Default, $hDll = -1)
 	If $fUnicode = Default Then $fUnicode = $__gfUnicode
 	If $hDll = -1 Then $hDll = $__gvKernel32
 
-	Local $aResult = DllCall($hDll, "dword", "GetConsoleTitle" & ($fUnicode ? "A" : "W"), _
+	Local $aResult = DllCall($hDll, "dword", "GetConsoleTitle" & ($fUnicode ? "W" : "A"), _
 			"ptr", 0, _
 			"dword", 0)
 	If @error Then Return SetError(@error, @extended, "")
 
 	Local $tConsoleTitle = DllStructCreate(($fUnicode ? "w" : "") & "char buffer[" & $aResult[0] & "]")
 
-	$aResult = DllCall($hDll, "dword", "GetConsoleTitle" & ($fUnicode ? "A" : "W"), _
+	$aResult = DllCall($hDll, "dword", "GetConsoleTitle" & ($fUnicode ? "W" : "A"), _
 			"struct*", $tConsoleTitle, _
 			"dword", $aResult[0])
 	If @error Then Return SetError(@error, @extended, "")
@@ -2715,7 +2744,7 @@ Func _Console_ReadConsole($hConsoleInput, $nNumberOfCharsToRead, $fUnicode = Def
 
 	Local $tBuffer = DllStructCreate(($fUnicode ? "w" : "") & "char buffer[" & $nNumberOfCharsToRead & "]")
 
-	Local $aResult = DllCall($hDll, "BOOL", "ReadConsole" & ($fUnicode ? "A" : "W"), _
+	Local $aResult = DllCall($hDll, "BOOL", "ReadConsole" & ($fUnicode ? "W" : "A"), _
 			"handle", $hConsoleInput, _
 			"struct*", $tBuffer, _
 			"dword", $nNumberOfCharsToRead, _
@@ -2746,7 +2775,7 @@ Func _Console_ReadInput($hConsoleInput, $pBuffer, $iLength, $fUnicode = Default,
 	If $hDll = -1 Then $hDll = $__gvKernel32
 	If $hConsoleInput = -1 Then $hConsoleInput = _Console_GetStdHandle($STD_INPUT_HANDLE, $hDll)
 
-	Local $aResult = DllCall($hDll, "BOOL", "ReadConsoleInput" & ($fUnicode ? "A" : "W"), _
+	Local $aResult = DllCall($hDll, "BOOL", "ReadConsoleInput" & ($fUnicode ? "W" : "A"), _
 			"handle", $hConsoleInput, _
 			"ptr", $pBuffer, _
 			"int", $iLength, _
@@ -2955,7 +2984,7 @@ Func _Console_ScrollScreenBufferEx($hConsoleOutput, _
 	If IsDllSTruct($pFill) Then $pFill = DllStructGetPtr($pFill)
 	If $pClipRect <> 0 And IsDllSTruct($pClipRect) Then $pClipRect = DllStructGetPtr($pClipRect)
 
-	Local $aResult = DllCall($hDll, "bool", "ScrollConsoleScreenBuffer" & ($fUnicode ? "A" : "W"), _
+	Local $aResult = DllCall($hDll, "bool", "ScrollConsoleScreenBuffer" & ($fUnicode ? "W" : "A"), _
 			"handle", $hConsoleOutput, _
 			"ptr", $pScrollRect, _
 			"ptr", $pClipRect, _
@@ -3755,7 +3784,7 @@ Func _Console_SetTitle($sConsoleTitle, $fUnicode = Default, $hDll = -1)
 	If $fUnicode = Default Then $fUnicode = $__gfUnicode
 	If $hDll = -1 Then $hDll = $__gvKernel32
 
-	Local $aResult = DllCall($hDll, "bool", "SetConsoleTitle" & ($fUnicode ? "A" : "W"), _
+	Local $aResult = DllCall($hDll, "bool", "SetConsoleTitle" & ($fUnicode ? "W" : "A"), _
 			($fUnicode ? "w" : "") & "str", $sConsoleTitle)
 	If @error Then Return SetError(@error, @extended, False)
 
@@ -3881,7 +3910,7 @@ Func _Console_WriteConsole($hConsole, $sText, $fUnicode = Default, $hDll = -1)
 		If $hDll = -1 Then $hDll = $__gvKernel32
 		If $hConsole = -1 Then $hConsole = _Console_GetStdHandle($STD_OUTPUT_HANDLE, $hDll)
 
-		Local $aResult = DllCall($hDll, "bool", "WriteConsole" & ($fUnicode ? "A" : "W"), _
+		Local $aResult = DllCall($hDll, "bool", "WriteConsole" & ($fUnicode ? "W" : "A"), _
 				"handle", $hConsole, _
 				($fUnicode ? "w" : "") & "str", $sText, _
 				"dword", StringLen($sText), _
@@ -4014,7 +4043,7 @@ Func _Console_WriteOutputCharacter($hConsole, $sText, $iX, $iY, $fUnicode = Defa
 	If $hDll = -1 Then $hDll = $__gvKernel32
 	If $hConsole = -1 Then $hConsole = _Console_GetStdHandle($STD_OUTPUT_HANDLE, $hDll)
 
-	Local $aResult = DllCall($hDll, "bool", "WriteConsoleOutputCharacter" & ($fUnicode ? "A" : "W"), _
+	Local $aResult = DllCall($hDll, "bool", "WriteConsoleOutputCharacter" & ($fUnicode ? "W" : "A"), _
 			"handle", $hConsole, _
 			($fUnicode ? "w" : "") & "str", $sText, _
 			"dword", StringLen($sText), _
