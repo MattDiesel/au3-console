@@ -1,4 +1,3 @@
-
 #AutoIt3Wrapper_Au3Check_Parameters=-d -w 1 -w 2 -w 3 -w 4 -w 5 -w 6
 #Tidy_Parameters=/sf
 
@@ -3976,7 +3975,7 @@ Func _Console_WriteOutputAttribute($hConsole, $aiAttributes, $iX, $iY, $iStart =
 	Local $aResult = DllCall($hDll, "bool", "WriteConsoleOutputAttribute", _
 			"handle", $hConsole, _
 			"struct*", $tAttributes, _
-			"dword", $iEnd - $iStart + 1, _
+			"dword", $iBnd + 1, _
 			"dword", BitShift($iY, -16) + $iX, _
 			"dword*", 0)
 	If @error Then Return SetError(@error, @extended, False)
