@@ -1,4 +1,3 @@
-
 #AutoIt3Wrapper_Au3Check_Parameters=-d -w 1 -w 2 -w 3 -w 4 -w 5 -w 6
 #Tidy_Parameters=/sf
 
@@ -269,7 +268,7 @@ Global $__gvKernel32 = "kernel32.dll"
 Global $__gfUnicode = True
 
 ; Determines if running under SciTE or compiled as a CUI app, then uses ConsoleWrite in _Console_WriteConsole function
-Global $__gfIsCUI = (_Console_GetStdHandle($STD_OUTPUT_HANDLE) <> 0)
+Global $__gfIsCUI = False ; (_Console_GetStdHandle($STD_OUTPUT_HANDLE) <> 0)
 
 ; ===============================================================================================================================
 
