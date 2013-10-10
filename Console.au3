@@ -2564,7 +2564,7 @@ Func _Console_GetScreenBufferPos($hConsoleOutput = -1, $hDll = -1)
 	If @error Then Return SetError(@error, @extended, 0)
 
 	Local $aRet[4] = [$tConsoleScreenBufferInfo.Left, $tConsoleScreenBufferInfo.Top, _
-			$tConsoleScreenBufferInfo.Right - $aRet[0], $tConsoleScreenBufferInfo.Bottom - $aRet[1]]
+			$tConsoleScreenBufferInfo.Right - $tConsoleScreenBufferInfo.Left, $tConsoleScreenBufferInfo.Bottom - $tConsoleScreenBufferInfo.Top]
 	Return $aRet
 EndFunc   ;==>_Console_GetScreenBufferPos
 
@@ -2698,7 +2698,7 @@ Func _Console_GetSelectionRect($hDll = -1)
 	If @error Then Return SetError(@error, @extended, 0)
 
 	Local $aRet[4] = [$tConsoleSelectionInfo.Left, $tConsoleSelectionInfo.Top, _
-			$tConsoleSelectionInfo.Right - $aRet[0], $tConsoleSelectionInfo.Bottom - $aRet[1]]
+			$tConsoleSelectionInfo.Right - $tConsoleSelectionInfo.Left, $tConsoleSelectionInfo.Bottom - $tConsoleSelectionInfo.Top]
 	Return $aRet
 EndFunc   ;==>_Console_GetSelectionRect
 
@@ -3032,7 +3032,7 @@ Func _Console_ReadConsoleInputRecord($hConsoleInput = -1, $fUnicode = Default, $
 
 	Local $tInputRecord = DllStructCreate($tagINPUT_RECORD)
 
-	If _Console_ReadInput($hConsoleInput, DllStructGetPtr($tInputRecord), 1, $fUnicode, $hDll) = 0 Then Return SetError(@error, @extended, 0)
+	If _Console_ReadConsoleInput($hConsoleInput, DllStructGetPtr($tInputRecord), 1, $fUnicode, $hDll) = 0 Then Return SetError(@error, @extended, 0)
 
 	Return $tInputRecord
 EndFunc   ;==>_Console_ReadConsoleInputRecord
@@ -3126,7 +3126,7 @@ Func _Console_RunConsole($hStdIn, $hStdOut, $hStdErr, $sCmd, $fWait = True, $fNe
 
 	Local $tStartUpInfo = DllStructCreate($tagSTARTUPINFO)
 
-	$tStartUpInfo.Flags = $STARTF_USESTDHANDLES
+	$tStartUpInfo.Flags = 0x00000100 ; $STARTF_USESTDHANDLES
 	$tStartUpInfo.StdInput = $hStdIn
 	$tStartUpInfo.StdOutput = $hStdOut
 	$tStartUpInfo.StdError = $hStdErr
@@ -4192,8 +4192,10 @@ EndFunc   ;==>_Console_Write
 ; Example .......: Yes
 ; ===============================================================================================================================
 Func _Console_WriteConsole($hConsole, $sText, $fUnicode = Default, $hDll = -1)
+	Local $aResult
+
 	If $__gfIsCUI Then
-		Local $aResult = ConsoleWrite($sText)
+		$aResult = ConsoleWrite($sText)
 
 		Return SetExtended($aResult, $aResult <> 0)
 	Else
@@ -4201,7 +4203,7 @@ Func _Console_WriteConsole($hConsole, $sText, $fUnicode = Default, $hDll = -1)
 		If $hDll = -1 Then $hDll = $__gvKernel32
 		If $hConsole = -1 Then $hConsole = _Console_GetStdHandle($STD_OUTPUT_HANDLE, $hDll)
 
-		Local $aResult = DllCall($hDll, "bool", "WriteConsole" & ($fUnicode ? "W" : "A"), _
+		$aResult = DllCall($hDll, "bool", "WriteConsole" & ($fUnicode ? "W" : "A"), _
 				"handle", $hConsole, _
 				($fUnicode ? "w" : "") & "str", $sText, _
 				"dword", StringLen($sText), _
@@ -4342,5 +4344,5 @@ Func _Console_WriteOutputCharacter($hConsole, $sText, $iX, $iY, $fUnicode = Defa
 			"dword*", 0)
 	If @error Then Return SetError(1, @error, False)
 
-	Return True
+	Return $aResult[0] <> 0
 EndFunc   ;==>_Console_WriteOutputCharacter
