@@ -1,16 +1,10 @@
-
-#include "../Console.au3"
-
-If $__gfIsCUI Then
-	MsgBox(0, "Running from SciTE?", "This program has to be run outside of SciTE.")
-	Exit
-EndIf
-
+#AutoIt3Wrapper_Au3Check_Parameters=-d -w 1 -w 2 -w 3 -w 4 -w 5 -w 6 -w 7
+#include '..\Console.au3'
 Global $aColors[][2] = [ _
-	["black", 0], _
-	["blue", $BACKGROUND_BLUE], _
-	["green", $BACKGROUND_GREEN], _
-	["red", $BACKGROUND_RED] ]
+		["black", 0], _
+		["blue", $BACKGROUND_BLUE], _
+		["green", $BACKGROUND_GREEN], _
+		["red", $BACKGROUND_RED]]
 
 Global $BgColor = "black"
 Global $FgColor = "red"
@@ -21,29 +15,41 @@ Global $MouseX = -1
 Global $MouseY = -1
 Global $KeysPressed = ""
 
-_Console_Alloc()
-
-_Console_SetTitle("Console Paint")
-_Console_SetIcon(@SystemDir & "\mspaint.exe")
-_Console_Clear()
-_Console_SetScreenBufferSize(-1, $CanvasWidth, $CanvasHeight)
-WinMove(_Console_GetWindow(), "", 100, 100, 10000, 10000)
-
-_Console_FillOutputCharacter(-1, "_", $CanvasWidth, 0, $CanvasHeight - 3)
-
-While 1
-	$tData = _Console_ReadInputRecord()
-
-	_conmain(DllStructGetPtr($tData))
-WEnd
-
-_Console_Free()
+_Example()
 Exit
+
+Func _Example()
+	If $__gfIsCUI Then
+		MsgBox(0, "Running from SciTE?", "This program has to be run outside of SciTE.")
+		Exit
+	EndIf
+
+
+	_Console_Alloc()
+
+	_Console_SetTitle("Console Paint")
+	_Console_SetIcon(@SystemDir & "\mspaint.exe")
+	_Console_Clear()
+	_Console_SetScreenBufferSize(-1, $CanvasWidth, $CanvasHeight)
+	WinMove(_Console_GetWindow(), "", 100, 100, 10000, 10000)
+
+	_Console_FillOutputCharacter(-1, "_", $CanvasWidth, 0, $CanvasHeight - 3)
+
+	Local $tData
+	While 1
+		$tData = _Console_ReadInputRecord()
+
+		_conmain(DllStructGetPtr($tData))
+	WEnd
+
+	_Console_Free()
+EndFunc   ;==>_Example
+
 
 Func _CanvasClear()
 	_Console_Clear()
 	_Console_FillOutputCharacter(-1, "_", $CanvasWidth, 0, $CanvasHeight - 3)
-EndFunc
+EndFunc   ;==>_CanvasClear
 
 Func _mouseevent($tInputRecord)
 	If DllStructGetData($tInputRecord, "MousePositionY") > $CanvasHeight - 3 Then
@@ -51,7 +57,7 @@ Func _mouseevent($tInputRecord)
 	Else
 		_CanvasMouseEvent($tInputRecord)
 	EndIf
-EndFunc
+EndFunc   ;==>_mouseevent
 
 Func _CanvasMouseEvent($tInputRecord)
 	Switch DllStructGetData($tInputRecord, "EventFlags")
@@ -80,7 +86,7 @@ Func _CanvasMouseEvent($tInputRecord)
 		Case $MOUSE_HWHEELED
 		Case $MOUSE_WHEELED
 	EndSwitch
-EndFunc
+EndFunc   ;==>_CanvasMouseEvent
 
 Func _StatusBarMouseEvent($tInputRecord)
 	Switch DllStructGetData($tInputRecord, "EventFlags")
@@ -93,7 +99,7 @@ Func _StatusBarMouseEvent($tInputRecord)
 		Case $MOUSE_HWHEELED
 		Case $MOUSE_WHEELED
 	EndSwitch
-EndFunc
+EndFunc   ;==>_StatusBarMouseEvent
 
 
 Func _keyevent($tInputRecord)
@@ -109,7 +115,7 @@ Func _keyevent($tInputRecord)
 		Case "^n"
 			_CanvasClear()
 	EndSwitch
-EndFunc
+EndFunc   ;==>_keyevent
 
 Func _KeyEventToStateStr($tInputRecord)
 	Local $iState = DllStructGetData($tInputRecord, "ControlKeyState"), $sRet = ""
@@ -119,7 +125,7 @@ Func _KeyEventToStateStr($tInputRecord)
 	If BitAND($iState, BitOR($RIGHT_CTRL_PRESSED, $LEFT_CTRL_PRESSED)) Then $sRet = "^" & $sRet
 
 	Return $sRet
-EndFunc
+EndFunc   ;==>_KeyEventToStateStr
 
 Func _KeyEventToHotkey($tInputRecord)
 	Local $sKey = StringStripWS(DllStructGetData($tInputRecord, "Char"), 8)
@@ -129,7 +135,7 @@ Func _KeyEventToHotkey($tInputRecord)
 	$sKey = StringLower(Chr(DllStructGetData($tInputRecord, "VirtualKeyCode")))
 
 	Return _KeyEventToStateStr($tInputRecord) & $sKey
-EndFunc
+EndFunc   ;==>_KeyEventToHotkey
 
 Func _conmain($pInputRecord)
 	Local $tInputRecord
@@ -149,12 +155,12 @@ Func _conmain($pInputRecord)
 
 			_mouseevent($tInputRecord)
 	EndSwitch
-EndFunc
+EndFunc   ;==>_conmain
 
 Func _Console_FillSquare($x, $y, $col)
 	Local $aAttr[] = [_Color($col)]
 	_Console_WriteOutputAttribute(-1, $aAttr, $x, $y)
-EndFunc
+EndFunc   ;==>_Console_FillSquare
 
 Func _Console_Clear()
 	Local $aSize = _Console_GetScreenBufferSize()
@@ -163,7 +169,7 @@ Func _Console_Clear()
 	_Console_FillOutputAttribute(-1, $iDefAttr, $aSize[0] * $aSize[1], 0, 0)
 	_Console_FillOutputCharacter(-1, " ", $aSize[0] * $aSize[1], 0, 0)
 	_Console_SetCursorPosition(-1, 0, 0)
-EndFunc
+EndFunc   ;==>_Console_Clear
 
 Func _Color($sName)
 	If $sName = "fg" Then
@@ -172,9 +178,9 @@ Func _Color($sName)
 		$sName = $BgColor
 	EndIf
 
-	For $i = 0 to UBound($aColors) - 1
-		If $aColors[$i][0] = $sName Then return $aColors[$i][1]
+	For $i = 0 To UBound($aColors) - 1
+		If $aColors[$i][0] = $sName Then Return $aColors[$i][1]
 	Next
 
 	Return SetError(1, 0, 0)
-EndFunc
+EndFunc   ;==>_Color
