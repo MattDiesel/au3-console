@@ -1,30 +1,35 @@
-#include 'Console.au3'
+#AutoIt3Wrapper_Au3Check_Parameters=-d -w 1 -w 2 -w 3 -w 4 -w 5 -w 6 -w 7
 #include <String.au3>
+#include '..\Console.au3'
 
-_Console_Alloc()
+_Example()
+Exit
 
-_Console_Write("Loading file: ")
+Func _Example()
+	_Console_Alloc()
 
-Local $aiSize = _Console_GetScreenBufferSize()
-If @error Then Exit 1
+	_Console_Write("Loading file: ")
 
-Local $aiPos = _Console_GetCursorPosition()
+	Local $aiSize = _Console_GetScreenBufferSize()
+	If @error Then Exit 1
 
-Local $a = _Console_ProgressCreate(-1, $aiPos[0], $aiPos[1], $aiSize[0] - $aiPos[0])
+	Local $aiPos = _Console_GetCursorPosition()
 
-_Console_SetCursorVisible(-1, False)
-For $i = 1 To 100
-	_Console_ProgressSet($a, $i)
+	Local $a = _Console_ProgressCreate(-1, $aiPos[0], $aiPos[1], $aiSize[0] - $aiPos[0])
 
-	Sleep(50)
-Next
+	_Console_SetCursorVisible(-1, False)
+	For $i = 1 To 100
+		_Console_ProgressSet($a, $i)
 
-_Console_SetCursorPosition(-1, 0, $aiPos[1] + 1)
-_Console_SetCursorVisible(-1, True)
+		Sleep(50)
+	Next
 
-_Console_Pause()
-_Console_Free()
+	_Console_SetCursorPosition(-1, 0, $aiPos[1] + 1)
+	_Console_SetCursorVisible(-1, True)
 
+	_Console_Pause()
+	_Console_Free()
+EndFunc   ;==>_Example
 
 Func _Console_ProgressCreate($hConsole, $x, $y, $w, $sStartChr = "[", $sEndChr = "]", $sEmptyChr = " ", $sFullChr = "=", $fShowPercent = True, $hDll = -1)
 	If $hDll = -1 Then $hDll = $__gvKernel32
