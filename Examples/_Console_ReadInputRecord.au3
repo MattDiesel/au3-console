@@ -1,20 +1,22 @@
+#AutoIt3Wrapper_Au3Check_Parameters=-d -w 1 -w 2 -w 3 -w 4 -w 5 -w 6 -w 7
+#include "..\Console.au3"
 
-#include "../Console.au3"
+_Example()
+Exit
 
-_Console_Alloc()
-_Console_SetMode(-1, $ENABLE_WINDOW_INPUT)
+Func _Example()
+	_Console_Alloc()
+	_Console_SetMode(-1, $ENABLE_WINDOW_INPUT)
 
-While 1
-	$tData = _Console_ReadInputRecord()
+	While 1
+		$tData = _Console_ReadInputRecord()
 
-	_Console_PrintEventRecord(DllStructGetPtr($tData))
-WENd
+		_Console_PrintEventRecord(DllStructGetPtr($tData))
+	WEnd
 
-_Console_Pause()
-_Console_Free()
-
-
-
+	_Console_Pause()
+	_Console_Free()
+EndFunc   ;==>_Example
 
 Func _Console_PrintEventRecord($pInputRecord)
 	Local $tInputRecord
@@ -69,7 +71,7 @@ Func _Console_PrintEventRecord($pInputRecord)
 		Case $FOCUS_EVENT
 			$tInputRecord = DllStructCreate($tagINPUT_RECORD_FOCUS, $pInputRecord)
 
-			If DllStructGetDAta($tInputRecord, "SetFocus") Then
+			If DllStructGetData($tInputRecord, "SetFocus") Then
 				_Console_WriteLine("Focused")
 			Else
 				_Console_WriteLine("Lost focus")
