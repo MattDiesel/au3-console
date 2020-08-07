@@ -1,6 +1,7 @@
-#AutoIt3Wrapper_Au3Check_Parameters=-d -w 1 -w 2 -w 3 -w 4 -w 5 -w 6
+;~ This line below is commented out because not everyone in their projects has customized code
+;~ #AutoIt3Wrapper_Au3Check_Parameters=-d -w 1 -w 2 -w 3 -w 4 -w 5 -w 6
 #Tidy_Parameters=/sf
-
+#include-once
 #include <WinAPI.au3>
 
 ; #INDEX# =======================================================================================================================
@@ -11,6 +12,7 @@
 ; Language ......: English
 ; Description ...: The following functions are used to access a console.
 ; Author(s) .....: Matt Diesel (Mat), Erik Pilsits (wraithdu)
+; Modified ......: Michał Lipok (mLipok)
 ; Forum link ....: http://www.autoitscript.com/forum/index.php?showtopic=?????? (tba)
 ; MSDN link .....: http://msdn.microsoft.com/en-us/library/ms682073.aspx
 ; DLL(s) ........: Kernel32.dll
@@ -952,9 +954,6 @@ Global Const $tagINPUT_RECORD_FOCUS = "WORD EventType; STRUCT; " & $tagFOCUS_EVE
 ; ===============================================================================================================================
 Global Const $tagSMALL_RECT = "SHORT Left; SHORT Top; SHORT Right; SHORT Bottom;"
 
-
-
-
 ; #FUNCTION# ====================================================================================================================
 ; Name ..........: _Console_AddAlias
 ; Description ...: Defines a console alias for the specified executable.
@@ -1173,7 +1172,7 @@ Func _Console_FillOutputCharacter($hConsoleOutput, $sCharacter, $nLength, $iX = 
 
 	Local $aResult = DllCall("kernel32.dll", "bool", "FillConsoleOutputCharacter" & ($fUnicode ? "W" : "A"), _
 			"handle", $hConsoleOutput, _
-			"byte", IsString($sCharacter) ?($fUnicode ? AscW($sCharacter) : Asc($sCharacter)) : $sCharacter, _
+			"byte", IsString($sCharacter) ? ($fUnicode ? AscW($sCharacter) : Asc($sCharacter)) : $sCharacter, _
 			"dword", $nLength, _
 			"int", BitShift($iY, -16) + $iX, _
 			"dword*", 0)
@@ -1463,112 +1462,6 @@ Func _Console_GetCP($hDll = -1)
 EndFunc   ;==>_Console_GetCP
 
 ; #FUNCTION# ====================================================================================================================
-; Name ..........: _Console_GetCursorInfo
-; Description ...: Retrieves information about the size and visibility of the cursor for the specified console screen buffer.
-; Syntax ........: _Console_GetCursorInfo( [$hConsoleOutput [, $hDll ]] )
-; Parameters ....: $hConsoleOutput      - A handle to the console screen buffer. The handle must have the GENERIC_READ access
-;                                         right.
-;                  $hDll                - A handle to a dll to use. This prevents constant opening of the dll which could slow it
-;                                         down. If you are calling lots of functions from the same dll then this recommended.
-; Return values .: Success              - A CONSOLE_CURSOR_INFO structure with the information.
-;                  Failure              - zero
-; Author ........: Matt Diesel (Mat)
-; Modified ......:
-; Remarks .......:
-; Related .......: _Console_GetCursorSize, _Console_GetCursorVisible
-; Link ..........: http://msdn.microsoft.com/en-us/library/ms683163.aspx
-; Example .......: No
-; ===============================================================================================================================
-Func _Console_GetCursorInfo($hConsoleOutput = -1, $hDll = -1)
-	If $hDll = -1 Then $hDll = $__gvKernel32
-	If $hConsoleOutput = -1 Then $hConsoleOutput = _Console_GetStdHandle($STD_OUTPUT_HANDLE, $hDll)
-
-	Local $tConsoleCursorInfo = DllStructCreate($tagCONSOLE_CURSOR_INFO)
-
-	Local $aResult = DllCall($hDll, "bool", "GetConsoleCursorInfo", _
-			"handle", $hConsoleOutput, _
-			"struct*", $tConsoleCursorInfo)
-	If @error Or Not $aResult[0] Then Return SetError(@error, @extended, 0)
-
-	Return $tConsoleCursorInfo
-EndFunc   ;==>_Console_GetCursorInfo
-
-; #FUNCTION# ====================================================================================================================
-; Name ..........: _Console_GetCursorPosition
-; Description ...: Gets the current cursor position in a console.
-; Syntax ........: _Console_GetCursorPosition( [ $hConsole [, $hDll ]] )
-; Parameters ....: $hConsole            - A handle to the console screen buffer. The handle must have the GENERIC_READ access
-;                                         right.
-;                  $hDll                - A handle to a dll to use. This prevents constant opening of the dll which could slow it
-;                                         down. If you are calling lots of functions from the same dll then this recommended.
-; Return values .: Success              - A 2 element array:
-;                                       |0 - The cursors current zero based character column (X value)
-;                                       |1 - The cursors current zero based character row (Y value)
-;                  Failure              - Zero and set's the @error flag.
-; Author(s) .....: Matt Diesel (Mat)
-; Modified ......:
-; Remarks .......:
-; Related .......: _Console_SetCursorPosition, _Console_GetScreenBufferInfo
-; Link ..........:
-; Example .......: No
-; ===============================================================================================================================
-Func _Console_GetCursorPosition($hConsole = -1, $hDll = -1)
-	Local $tConsoleScreenBufferInfo = _Console_GetScreenBufferInfo($hConsole, $hDll)
-	If @error Then Return SetError(@error, @extended, 0)
-
-	Local $aRet[2] = [$tConsoleScreenBufferInfo.CursorPositionX, $tConsoleScreenBufferInfo.CursorPositionY]
-	Return $aRet
-EndFunc   ;==>_Console_GetCursorPosition
-
-; #FUNCTION# ====================================================================================================================
-; Name ..........: _Console_GetCursorSize
-; Description ...: Retrieves whether the size of the cursor for the specified console screen buffer.
-; Syntax ........: _Console_GetCursorSize( [ $hConsole [, $hDll ]] )
-; Parameters ....: $hConsole            - A handle to the console screen buffer. The handle must have the GENERIC_READ access
-;                                         right.
-;                  $hDll                - A handle to a dll to use. This prevents constant opening of the dll which could slow it
-;                                         down. If you are calling lots of functions from the same dll then this recommended.
-; Return values .: Success              - The percentage of a character cell taken up by the cursor (between 1 and 100).
-;                  Failure              - Less than zero.
-; Author(s) .....: Matt Diesel (Mat)
-; Modified ......:
-; Remarks .......:
-; Related .......: _Console_GetCursorInfo
-; Link ..........:
-; Example .......: No
-; ===============================================================================================================================
-Func _Console_GetCursorSize($hConsole = -1, $hDll = -1)
-	Local $tConsoleCursorInfo = _Console_GetCursorInfo($hConsole, $hDll)
-	If @error Then Return SetError(@error, @extended, -1)
-
-	Return $tConsoleCursorInfo.Size
-EndFunc   ;==>_Console_GetCursorSize
-
-; #FUNCTION# ====================================================================================================================
-; Name ..........: _Console_GetCursorVisible
-; Description ...: Retrieves whether the cursor is visible for the specified console screen buffer.
-; Syntax ........: _Console_GetCursorVisible( [ $hConsole [, $hDll ]] )
-; Parameters ....: $hConsole            - A handle to the console screen buffer. The handle must have the GENERIC_READ access
-;                                         right.
-;                  $hDll                - A handle to a dll to use. This prevents constant opening of the dll which could slow it
-;                                         down. If you are calling lots of functions from the same dll then this recommended.
-; Return values .: Success              - True if the cursor is visible, otherwise False.
-;                  Failure              - Set's the @error flag. Will return False, but that could be a successful return.
-; Author(s) .....: Matt Diesel (Mat)
-; Modified ......:
-; Remarks .......:
-; Related .......: _Console_GetCursorInfo
-; Link ..........:
-; Example .......: No
-; ===============================================================================================================================
-Func _Console_GetCursorVisible($hConsole = -1, $hDll = -1)
-	Local $tConsoleCursorInfo = _Console_GetCursorInfo($hConsole, $hDll)
-	If @error Then Return SetError(@error, @extended, False)
-
-	Return $tConsoleCursorInfo.Visible
-EndFunc   ;==>_Console_GetCursorVisible
-
-; #FUNCTION# ====================================================================================================================
 ; Name ..........: _Console_GetCurrentFont
 ; Description ...: Retrieves information about the current console font.
 ; Syntax ........: _Console_GetCurrentFont( [$hConsoleOutput [, $fMaximumWindow [, $hDll ]]] )
@@ -1775,6 +1668,112 @@ Func _Console_GetCurrentFontWeight($hConsoleOutput = -1, $fMaximumWindow = False
 
 	Return $tConsoleFontInfoEx.FontWeight
 EndFunc   ;==>_Console_GetCurrentFontWeight
+
+; #FUNCTION# ====================================================================================================================
+; Name ..........: _Console_GetCursorInfo
+; Description ...: Retrieves information about the size and visibility of the cursor for the specified console screen buffer.
+; Syntax ........: _Console_GetCursorInfo( [$hConsoleOutput [, $hDll ]] )
+; Parameters ....: $hConsoleOutput      - A handle to the console screen buffer. The handle must have the GENERIC_READ access
+;                                         right.
+;                  $hDll                - A handle to a dll to use. This prevents constant opening of the dll which could slow it
+;                                         down. If you are calling lots of functions from the same dll then this recommended.
+; Return values .: Success              - A CONSOLE_CURSOR_INFO structure with the information.
+;                  Failure              - zero
+; Author ........: Matt Diesel (Mat)
+; Modified ......:
+; Remarks .......:
+; Related .......: _Console_GetCursorSize, _Console_GetCursorVisible
+; Link ..........: http://msdn.microsoft.com/en-us/library/ms683163.aspx
+; Example .......: No
+; ===============================================================================================================================
+Func _Console_GetCursorInfo($hConsoleOutput = -1, $hDll = -1)
+	If $hDll = -1 Then $hDll = $__gvKernel32
+	If $hConsoleOutput = -1 Then $hConsoleOutput = _Console_GetStdHandle($STD_OUTPUT_HANDLE, $hDll)
+
+	Local $tConsoleCursorInfo = DllStructCreate($tagCONSOLE_CURSOR_INFO)
+
+	Local $aResult = DllCall($hDll, "bool", "GetConsoleCursorInfo", _
+			"handle", $hConsoleOutput, _
+			"struct*", $tConsoleCursorInfo)
+	If @error Or Not $aResult[0] Then Return SetError(@error, @extended, 0)
+
+	Return $tConsoleCursorInfo
+EndFunc   ;==>_Console_GetCursorInfo
+
+; #FUNCTION# ====================================================================================================================
+; Name ..........: _Console_GetCursorPosition
+; Description ...: Gets the current cursor position in a console.
+; Syntax ........: _Console_GetCursorPosition( [ $hConsole [, $hDll ]] )
+; Parameters ....: $hConsole            - A handle to the console screen buffer. The handle must have the GENERIC_READ access
+;                                         right.
+;                  $hDll                - A handle to a dll to use. This prevents constant opening of the dll which could slow it
+;                                         down. If you are calling lots of functions from the same dll then this recommended.
+; Return values .: Success              - A 2 element array:
+;                                       |0 - The cursors current zero based character column (X value)
+;                                       |1 - The cursors current zero based character row (Y value)
+;                  Failure              - Zero and set's the @error flag.
+; Author(s) .....: Matt Diesel (Mat)
+; Modified ......:
+; Remarks .......:
+; Related .......: _Console_SetCursorPosition, _Console_GetScreenBufferInfo
+; Link ..........:
+; Example .......: No
+; ===============================================================================================================================
+Func _Console_GetCursorPosition($hConsole = -1, $hDll = -1)
+	Local $tConsoleScreenBufferInfo = _Console_GetScreenBufferInfo($hConsole, $hDll)
+	If @error Then Return SetError(@error, @extended, 0)
+
+	Local $aRet[2] = [$tConsoleScreenBufferInfo.CursorPositionX, $tConsoleScreenBufferInfo.CursorPositionY]
+	Return $aRet
+EndFunc   ;==>_Console_GetCursorPosition
+
+; #FUNCTION# ====================================================================================================================
+; Name ..........: _Console_GetCursorSize
+; Description ...: Retrieves whether the size of the cursor for the specified console screen buffer.
+; Syntax ........: _Console_GetCursorSize( [ $hConsole [, $hDll ]] )
+; Parameters ....: $hConsole            - A handle to the console screen buffer. The handle must have the GENERIC_READ access
+;                                         right.
+;                  $hDll                - A handle to a dll to use. This prevents constant opening of the dll which could slow it
+;                                         down. If you are calling lots of functions from the same dll then this recommended.
+; Return values .: Success              - The percentage of a character cell taken up by the cursor (between 1 and 100).
+;                  Failure              - Less than zero.
+; Author(s) .....: Matt Diesel (Mat)
+; Modified ......:
+; Remarks .......:
+; Related .......: _Console_GetCursorInfo
+; Link ..........:
+; Example .......: No
+; ===============================================================================================================================
+Func _Console_GetCursorSize($hConsole = -1, $hDll = -1)
+	Local $tConsoleCursorInfo = _Console_GetCursorInfo($hConsole, $hDll)
+	If @error Then Return SetError(@error, @extended, -1)
+
+	Return $tConsoleCursorInfo.Size
+EndFunc   ;==>_Console_GetCursorSize
+
+; #FUNCTION# ====================================================================================================================
+; Name ..........: _Console_GetCursorVisible
+; Description ...: Retrieves whether the cursor is visible for the specified console screen buffer.
+; Syntax ........: _Console_GetCursorVisible( [ $hConsole [, $hDll ]] )
+; Parameters ....: $hConsole            - A handle to the console screen buffer. The handle must have the GENERIC_READ access
+;                                         right.
+;                  $hDll                - A handle to a dll to use. This prevents constant opening of the dll which could slow it
+;                                         down. If you are calling lots of functions from the same dll then this recommended.
+; Return values .: Success              - True if the cursor is visible, otherwise False.
+;                  Failure              - Set's the @error flag. Will return False, but that could be a successful return.
+; Author(s) .....: Matt Diesel (Mat)
+; Modified ......:
+; Remarks .......:
+; Related .......: _Console_GetCursorInfo
+; Link ..........:
+; Example .......: No
+; ===============================================================================================================================
+Func _Console_GetCursorVisible($hConsole = -1, $hDll = -1)
+	Local $tConsoleCursorInfo = _Console_GetCursorInfo($hConsole, $hDll)
+	If @error Then Return SetError(@error, @extended, False)
+
+	Return $tConsoleCursorInfo.Visible
+EndFunc   ;==>_Console_GetCursorVisible
 
 ; #FUNCTION# ====================================================================================================================
 ; Name ..........: _Console_GetDisplayMode
@@ -3006,7 +3005,7 @@ Func _Console_ReadConsoleEx($hConsoleInput, $nNumberOfCharsToRead, $fUnicode = D
 
 	Return SetExtended($aResult[4], $tBuffer.buffer)
 EndFunc   ;==>_Console_ReadConsoleEx
-#region WIP
+#Region WIP
 
 
 ; Returns No. events read, zero = fail
@@ -3044,7 +3043,9 @@ EndFunc   ;==>_Console_ReadInput
 Func _Console_ReadInputRecord($fUnicode = Default, $hDll = -1)
 	Return _Console_ReadConsoleInputRecord(-1, $fUnicode, $hDll)
 EndFunc   ;==>_Console_ReadInputRecord
-#endregion WIP
+#EndRegion WIP
+
+
 
 
 ; #FUNCTION# ====================================================================================================================
@@ -3114,11 +3115,11 @@ Func _Console_Run($sCmd, $fWait = True, $fNew = False, $iShow = Default)
 	If $fWait Then Return RunWait($sCmd, "", $iShow, $iFlag)
 	Return Run($sCmd, "", $iShow, $iFlag)
 EndFunc   ;==>_Console_Run
+#Region WIP
 
-
-#region WIP
 
 Func _Console_RunConsole($hStdIn, $hStdOut, $hStdErr, $sCmd, $fWait = True, $fNew = False, $iShow = Default, $hDll = -1)
+	#forceref $fNew, $iShow
 	If $hDll = -1 Then $hDll = $__gvKernel32
 	If $hStdIn = -1 Then $hStdIn = _Console_GetStdHandle($STD_INPUT_HANDLE, $hDll)
 	If $hStdOut = -1 Then $hStdOut = _Console_GetStdHandle($STD_OUTPUT_HANDLE, $hDll)
@@ -3143,8 +3144,7 @@ Func _Console_RunConsole($hStdIn, $hStdOut, $hStdErr, $sCmd, $fWait = True, $fNe
 
 	Return $tProcInfo.ProcessID
 EndFunc   ;==>_Console_RunConsole
-
-#endregion WIP
+#EndRegion WIP
 
 ; #FUNCTION# ====================================================================================================================
 ; Name ..........: _Console_ScrollScreenBuffer
@@ -3389,125 +3389,6 @@ Func _Console_SetCtrlHandler($pHandlerRoutine, $fAdd = True, $hDll = -1)
 EndFunc   ;==>_Console_SetCtrlHandler
 
 ; #FUNCTION# ====================================================================================================================
-; Name ..........: _Console_SetCursorInfo
-; Description ...: Sets the size and visibility of the cursor for the specified console screen buffer.
-; Syntax ........: _Console_SetCursorInfo($hConsoleOutput, $iSize, $fVisible [, $hDll ] )
-; Parameters ....: $hConsoleOutput      - A handle to the console output buffer. The handle must have the GENERIC_READ access
-;                                         right.
-;                  $iSize               - The percentage of the character cell that is filled by the cursor. This value is
-;                                         between 1 and 100. The cursor appearance varies, ranging from completely filling the
-;                                         cell to showing up as a horizontal line at the bottom of the cell.
-;                  $fVisible            - The visibility of the cursor. If the cursor is visible, this is TRUE.
-;                  $hDll                - A handle to a dll to use. This prevents constant opening of the dll which could slow it
-;                                         down. If you are calling lots of functions from the same dll then this recommended.
-; Return values .: Success              - True
-;                  Failure              - False
-; Author ........: Matt Diesel (Mat)
-; Modified ......:
-; Remarks .......: The 'cursor' refers to the console's caret NOT the mouse cursor.
-; Related .......:
-; Link ..........: http://msdn.microsoft.com/en-us/library/ms686019.aspx
-; Example .......: No
-; ===============================================================================================================================
-Func _Console_SetCursorInfo($hConsoleOutput, $iSize, $fVisible, $hDll = -1)
-	If $hDll = -1 Then $hDll = $__gvKernel32
-	If $hConsoleOutput = -1 Then $hConsoleOutput = _Console_GetStdHandle($STD_OUTPUT_HANDLE, $hDll)
-
-	If $iSize = Default Then $iSize = _Console_GetCursorSize($hConsoleOutput, $hDll)
-	If $fVisible = Default Then $fVisible = _Console_GetCursorVisible($hConsoleOutput, $hDll)
-
-	Local $tConsoleCursorInfo = DllStructCreate($tagCONSOLE_CURSOR_INFO)
-	$tConsoleCursorInfo.Size = $iSize
-	$tConsoleCursorInfo.Visible = $fVisible
-
-	Local $aResult = DllCall($hDll, "bool", "SetConsoleCursorInfo", _
-			"handle", $hConsoleOutput, _
-			"struct*", $tConsoleCursorInfo)
-	If @error Then Return SetError(@error, @extended, False)
-
-	Return $aResult[0] <> 0
-EndFunc   ;==>_Console_SetCursorInfo
-
-; #FUNCTION# ====================================================================================================================
-; Name ..........: _Console_SetCursorSize
-; Description ...: Sets the size of the cursor for the specified console screen buffer.
-; Syntax ........: _Console_SetCursorSize($hConsoleOutput, $iSize [, $hDll ] )
-; Parameters ....: $hConsoleOutput      - A handle to the console output buffer. The handle must have the GENERIC_READ access
-;                                         right.
-;                  $iSize               - The percentage of the character cell that is filled by the cursor. This value is
-;                                         between 1 and 100. The cursor appearance varies, ranging from completely filling the
-;                                         cell to showing up as a horizontal line at the bottom of the cell.
-;                  $hDll                - A handle to a dll to use. This prevents constant opening of the dll which could slow it
-;                                         down. If you are calling lots of functions from the same dll then this recommended.
-; Return values .: Success              - True
-;                  Failure              - False
-; Author ........: Matt Diesel (Mat)
-; Modified ......:
-; Remarks .......:
-; Related .......: _Console_SetCursorInfo
-; Link ..........:
-; Example .......: No
-; ===============================================================================================================================
-Func _Console_SetCursorSize($hConsoleOutput, $iSize, $hDll = -1)
-	Return _Console_SetCursorInfo($hConsoleOutput, $iSize, Default, $hDll)
-EndFunc   ;==>_Console_SetCursorSize
-
-; #FUNCTION# ====================================================================================================================
-; Name ..........: _Console_SetCursorVisible
-; Description ...: Sets the visibility of the cursor for the specified console screen buffer.
-; Syntax ........: _Console_SetCursorVisible($hConsoleOutput, $fVisible [, $hDll ] )
-; Parameters ....: $hConsoleOutput      - A handle to the console output buffer. The handle must have the GENERIC_READ access
-;                                         right.
-;                  $fVisible            - The visibility of the cursor. If the cursor is visible, this is TRUE.
-;                  $hDll                - A handle to a dll to use. This prevents constant opening of the dll which could slow it
-;                                         down. If you are calling lots of functions from the same dll then this recommended.
-; Return values .: Success              - True
-;                  Failure              - False
-; Author ........: Matt Diesel (Mat)
-; Modified ......:
-; Remarks .......:
-; Related .......: _Console_SetCursorInfo
-; Link ..........:
-; Example .......: No
-; ===============================================================================================================================
-Func _Console_SetCursorVisible($hConsoleOutput, $fVisible, $hDll = -1)
-	Return _Console_SetCursorInfo($hConsoleOutput, Default, $fVisible, $hDll)
-EndFunc   ;==>_Console_SetCursorVisible
-
-; #FUNCTION# ====================================================================================================================
-; Name ..........: _Console_SetCursorPosition
-; Description ...: Sets the cursor position in the specified console screen buffer.
-; Syntax ........: _Console_SetCursorPosition($hConsoleOutput, $iX, $iY [, $hDll ] )
-; Parameters ....: $hConsoleOutput      - A handle to the console output buffer. The handle must have the GENERIC_READ access
-;                                         right.
-;                  $iX                  - The X coord of the new cursor position, in characters. The coordinate must be within
-;                                         the boundaries of the console screen buffer.
-;                  $iY                  - The Y coord of the new cursor position, in characters. The coordinate must be within
-;                                         the boundaries of the console screen buffer.
-;                  $hDll                - A handle to a dll to use. This prevents constant opening of the dll which could slow it
-;                                         down. If you are calling lots of functions from the same dll then this recommended.
-; Return values .: Success              - True
-;                  Failure              - False
-; Author ........: Matt Diesel (Mat)
-; Modified ......:
-; Remarks .......:
-; Related .......: _Console_GetCursorInfo, _Console_GetCursorPosition
-; Link ..........: http://msdn.microsoft.com/en-us/library/ms686025.aspx
-; Example .......: No
-; ===============================================================================================================================
-Func _Console_SetCursorPosition($hConsoleOutput, $iX, $iY, $hDll = -1)
-	If $hConsoleOutput = -1 Then $hConsoleOutput = _Console_GetStdHandle($STD_OUTPUT_HANDLE, $hDll)
-	If $hDll = -1 Then $hDll = $__gvKernel32
-
-	Local $aResult = DllCall($hDll, "bool", "SetConsoleCursorPosition", _
-			"handle", $hConsoleOutput, _
-			"int", BitShift($iY, -16) + $iX)
-	If @error Then Return SetError(@error, @extended, False)
-
-	Return $aResult[0] <> 0
-EndFunc   ;==>_Console_SetCursorPosition
-
-; #FUNCTION# ====================================================================================================================
 ; Name ..........: _Console_SetCurrentFontEx
 ; Description ...: Sets extended information about the current console font.
 ; Syntax ........: _Console_SetCurrentFontEx($hConsoleOutput, $fMaximumWindow, $iFont, $iWidth, $iHeight, $iFontFamily, _
@@ -3561,6 +3442,125 @@ Func _Console_SetCurrentFontEx($hConsoleOutput, $iFont, $iWidth, $iHeight, $iFon
 
 	Return $aResult[0] <> 0
 EndFunc   ;==>_Console_SetCurrentFontEx
+
+; #FUNCTION# ====================================================================================================================
+; Name ..........: _Console_SetCursorInfo
+; Description ...: Sets the size and visibility of the cursor for the specified console screen buffer.
+; Syntax ........: _Console_SetCursorInfo($hConsoleOutput, $iSize, $fVisible [, $hDll ] )
+; Parameters ....: $hConsoleOutput      - A handle to the console output buffer. The handle must have the GENERIC_READ access
+;                                         right.
+;                  $iSize               - The percentage of the character cell that is filled by the cursor. This value is
+;                                         between 1 and 100. The cursor appearance varies, ranging from completely filling the
+;                                         cell to showing up as a horizontal line at the bottom of the cell.
+;                  $fVisible            - The visibility of the cursor. If the cursor is visible, this is TRUE.
+;                  $hDll                - A handle to a dll to use. This prevents constant opening of the dll which could slow it
+;                                         down. If you are calling lots of functions from the same dll then this recommended.
+; Return values .: Success              - True
+;                  Failure              - False
+; Author ........: Matt Diesel (Mat)
+; Modified ......:
+; Remarks .......: The 'cursor' refers to the console's caret NOT the mouse cursor.
+; Related .......:
+; Link ..........: http://msdn.microsoft.com/en-us/library/ms686019.aspx
+; Example .......: No
+; ===============================================================================================================================
+Func _Console_SetCursorInfo($hConsoleOutput, $iSize, $fVisible, $hDll = -1)
+	If $hDll = -1 Then $hDll = $__gvKernel32
+	If $hConsoleOutput = -1 Then $hConsoleOutput = _Console_GetStdHandle($STD_OUTPUT_HANDLE, $hDll)
+
+	If $iSize = Default Then $iSize = _Console_GetCursorSize($hConsoleOutput, $hDll)
+	If $fVisible = Default Then $fVisible = _Console_GetCursorVisible($hConsoleOutput, $hDll)
+
+	Local $tConsoleCursorInfo = DllStructCreate($tagCONSOLE_CURSOR_INFO)
+	$tConsoleCursorInfo.Size = $iSize
+	$tConsoleCursorInfo.Visible = $fVisible
+
+	Local $aResult = DllCall($hDll, "bool", "SetConsoleCursorInfo", _
+			"handle", $hConsoleOutput, _
+			"struct*", $tConsoleCursorInfo)
+	If @error Then Return SetError(@error, @extended, False)
+
+	Return $aResult[0] <> 0
+EndFunc   ;==>_Console_SetCursorInfo
+
+; #FUNCTION# ====================================================================================================================
+; Name ..........: _Console_SetCursorPosition
+; Description ...: Sets the cursor position in the specified console screen buffer.
+; Syntax ........: _Console_SetCursorPosition($hConsoleOutput, $iX, $iY [, $hDll ] )
+; Parameters ....: $hConsoleOutput      - A handle to the console output buffer. The handle must have the GENERIC_READ access
+;                                         right.
+;                  $iX                  - The X coord of the new cursor position, in characters. The coordinate must be within
+;                                         the boundaries of the console screen buffer.
+;                  $iY                  - The Y coord of the new cursor position, in characters. The coordinate must be within
+;                                         the boundaries of the console screen buffer.
+;                  $hDll                - A handle to a dll to use. This prevents constant opening of the dll which could slow it
+;                                         down. If you are calling lots of functions from the same dll then this recommended.
+; Return values .: Success              - True
+;                  Failure              - False
+; Author ........: Matt Diesel (Mat)
+; Modified ......:
+; Remarks .......:
+; Related .......: _Console_GetCursorInfo, _Console_GetCursorPosition
+; Link ..........: http://msdn.microsoft.com/en-us/library/ms686025.aspx
+; Example .......: No
+; ===============================================================================================================================
+Func _Console_SetCursorPosition($hConsoleOutput, $iX, $iY, $hDll = -1)
+	If $hConsoleOutput = -1 Then $hConsoleOutput = _Console_GetStdHandle($STD_OUTPUT_HANDLE, $hDll)
+	If $hDll = -1 Then $hDll = $__gvKernel32
+
+	Local $aResult = DllCall($hDll, "bool", "SetConsoleCursorPosition", _
+			"handle", $hConsoleOutput, _
+			"int", BitShift($iY, -16) + $iX)
+	If @error Then Return SetError(@error, @extended, False)
+
+	Return $aResult[0] <> 0
+EndFunc   ;==>_Console_SetCursorPosition
+
+; #FUNCTION# ====================================================================================================================
+; Name ..........: _Console_SetCursorSize
+; Description ...: Sets the size of the cursor for the specified console screen buffer.
+; Syntax ........: _Console_SetCursorSize($hConsoleOutput, $iSize [, $hDll ] )
+; Parameters ....: $hConsoleOutput      - A handle to the console output buffer. The handle must have the GENERIC_READ access
+;                                         right.
+;                  $iSize               - The percentage of the character cell that is filled by the cursor. This value is
+;                                         between 1 and 100. The cursor appearance varies, ranging from completely filling the
+;                                         cell to showing up as a horizontal line at the bottom of the cell.
+;                  $hDll                - A handle to a dll to use. This prevents constant opening of the dll which could slow it
+;                                         down. If you are calling lots of functions from the same dll then this recommended.
+; Return values .: Success              - True
+;                  Failure              - False
+; Author ........: Matt Diesel (Mat)
+; Modified ......:
+; Remarks .......:
+; Related .......: _Console_SetCursorInfo
+; Link ..........:
+; Example .......: No
+; ===============================================================================================================================
+Func _Console_SetCursorSize($hConsoleOutput, $iSize, $hDll = -1)
+	Return _Console_SetCursorInfo($hConsoleOutput, $iSize, Default, $hDll)
+EndFunc   ;==>_Console_SetCursorSize
+
+; #FUNCTION# ====================================================================================================================
+; Name ..........: _Console_SetCursorVisible
+; Description ...: Sets the visibility of the cursor for the specified console screen buffer.
+; Syntax ........: _Console_SetCursorVisible($hConsoleOutput, $fVisible [, $hDll ] )
+; Parameters ....: $hConsoleOutput      - A handle to the console output buffer. The handle must have the GENERIC_READ access
+;                                         right.
+;                  $fVisible            - The visibility of the cursor. If the cursor is visible, this is TRUE.
+;                  $hDll                - A handle to a dll to use. This prevents constant opening of the dll which could slow it
+;                                         down. If you are calling lots of functions from the same dll then this recommended.
+; Return values .: Success              - True
+;                  Failure              - False
+; Author ........: Matt Diesel (Mat)
+; Modified ......:
+; Remarks .......:
+; Related .......: _Console_SetCursorInfo
+; Link ..........:
+; Example .......: No
+; ===============================================================================================================================
+Func _Console_SetCursorVisible($hConsoleOutput, $fVisible, $hDll = -1)
+	Return _Console_SetCursorInfo($hConsoleOutput, Default, $fVisible, $hDll)
+EndFunc   ;==>_Console_SetCursorVisible
 
 ; #FUNCTION# ====================================================================================================================
 ; Name ..........: _Console_SetDisplayMode
